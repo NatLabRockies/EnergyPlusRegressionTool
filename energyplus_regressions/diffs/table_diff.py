@@ -34,6 +34,7 @@ __version__ = "1.4"
 __copyright__ = "Copyright (c) 2009 Santosh Philip and Amir Roth 2013"
 __license__ = "GNU General Public License Version 3"
 
+from enum import Enum
 from pathlib import Path
 import sys
 import getopt
@@ -94,39 +95,82 @@ td.table_size_error {
 """
 
 
-def thresh_abs_rel_diff(abs_thresh: float, rel_thresh: float, x: str, y: str) -> tuple[float | str, float | str, str]:
+class DiffType(Enum):
+    EQUAL = 'equal'
+    SMALL = 'small'
+    BIG = 'big'
+    STRING = 'stringdiff'
+
+
+class CalculatedDiffBase():
+    def __init__(self):
+        self.type = DiffType.EQUAL
+
+    def abs(self):
+        return 0.0
+
+    def rel(self):
+        return 0.0
+
+    def s_type(self) -> str:
+        return self.type.value
+
+
+class CalculatedDiffNumeric(CalculatedDiffBase):
+    def __init__(self, abs_diff: float, rel_diff: float, diff_type: DiffType):
+        super().__init__()
+        self.abs_diff = abs_diff
+        self.rel_diff = rel_diff
+        self.type = diff_type
+
+    def abs(self) -> float:
+        return self.abs_diff
+
+    def rel(self) -> float:
+        return self.rel_diff
+
+
+class CalculatedDiffString(CalculatedDiffBase):
+    def __init__(self, string_1: str, string_2: str, diff_type: DiffType):
+        super().__init__()
+        self.string_1 = string_1
+        self.string_2 = string_2
+        self.type = diff_type
+
+    def abs(self) -> str:
+        return f"{self.string_1} vs {self.string_2}"
+
+    def rel(self) -> str:
+        return f"{self.string_1} vs {self.string_2}"
+
+
+def thresh_abs_rel_diff(abs_thresh: float, rel_thresh: float, x: str, y: str) -> CalculatedDiffBase:
     if x == y:
-        return 0, 0, 'equal'
+        return CalculatedDiffBase()
     try:
         fx = float(x)
         fy = float(y)
         abs_diff = abs(fx - fy)
         rel_diff = abs((fx - fy) / fx) if abs(fx) > abs(fy) else abs((fy - fx) / fy)
-        diff = 'equal'
+        diff = DiffType.EQUAL
         if abs_diff > abs_thresh and rel_diff > rel_thresh:
-            diff = 'big'
+            diff = DiffType.BIG
         elif (0 < abs_diff <= abs_thresh) or (0 < rel_diff <= rel_thresh):
-            diff = 'small'
-        return abs_diff, rel_diff, diff
+            diff = DiffType.SMALL
+        return CalculatedDiffNumeric(abs_diff, rel_diff, diff)
     except ValueError:
-        # if we couldn't get a float out of it, we are doing string comparison, check case-insensitively before leaving
+        # if we couldn't get a float out of one of them, do a string comparison, check case-insensitively before leaving
         if x.lower().strip() == y.lower().strip():
-            return 0, 0, 'equal'
-        else:
-            return f'{x} vs {y}', f'{x} vs {y}', 'stringdiff'
+            return CalculatedDiffBase()
+        return CalculatedDiffString(x, y, DiffType.STRING)
 
 
 def prev_sib(entity):
-    """get soup.previousSibling ignoring stripping out all blank spaces"""
-    prevs = entity
-    i = 0
-    while i == 0:
-        prevs = prevs.previousSibling
-        if isinstance(prevs, NavigableString):
-            utxt = prevs.strip()
-            if utxt == '':
-                continue
-        return prevs
+    """Get previous sibling, skipping blank text nodes."""
+    previous_sibling = entity.previousSibling
+    while isinstance(previous_sibling, NavigableString) and previous_sibling.strip() == '':
+        previous_sibling = previous_sibling.previousSibling
+    return previous_sibling
 
 
 def get_table_unique_heading(table):
@@ -136,8 +180,7 @@ def get_table_unique_heading(table):
         val = prev_sib(table)
         if val:
             return '%s' % val
-        else:
-            return None
+        return None
     except:  # pragma: no cover - AFAIK the prev_sib will always return _something_, including None, but I can't be sure
         return None
 
@@ -145,8 +188,8 @@ def get_table_unique_heading(table):
 def hdict2soup(soup, heading, num, hdict, tdict, horder):
     """Create soup table (including anchor and heading) from header dictionary and error dictionary"""
     # Append table anchor
-    atag = Tag(soup, name='a', attrs=[('name', '%s%s' % ('tablehead', num,))])
-    soup.body.append(atag)
+    a_tag = Tag(soup, name='a', attrs={'name': f'tablehead{num}'})
+    soup.body.append(a_tag)
 
     # Append table heading
     htag = Tag(soup, name='b')
@@ -154,71 +197,73 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
     soup.body.append(htag)
 
     # Append table
-    tabletag = Tag(soup, name='table', attrs=[('border', '1')])
-    soup.body.append(tabletag)
+    table_tag = Tag(soup, name='table', attrs={'border': '1'})
+    soup.body.append(table_tag)
 
     # Append column headings
-    trtag = Tag(soup, name='tr')
-    tabletag.append(trtag)
+    tr_tag = Tag(soup, name='tr')
+    table_tag.append(tr_tag)
     for h in horder:
-        tdtag = Tag(soup, name='th')
+        td_tag = Tag(soup, name='th')
         if h != 'DummyPlaceholder':
-            tdtag.append(str(h))
+            td_tag.append(str(h))
         else:
-            tdtag.append('')
-        trtag.append(tdtag)
+            td_tag.append('')
+        tr_tag.append(td_tag)
 
     # Append column thresholds
-    trtag = Tag(soup, name='tr')
-    tabletag.append(trtag)
+    tr_tag = Tag(soup, name='tr')
+    table_tag.append(tr_tag)
     for h in horder:
-        tdtag = Tag(soup, name='td')
-        trtag.append(tdtag)
+        td_tag = Tag(soup, name='td')
+        tr_tag.append(td_tag)
         if h in tdict:
             (abs_thresh, rel_thresh) = tdict[h]
-            tdtag.append(str(abs_thresh))
+            td_tag.append(str(abs_thresh))
         else:
-            tdtag.append('Absolute threshold')
+            td_tag.append('Absolute threshold')
 
-    trtag = Tag(soup, name='tr')
-    tabletag.append(trtag)
+    tr_tag = Tag(soup, name='tr')
+    table_tag.append(tr_tag)
     for h in horder:
-        tdtag = Tag(soup, name='td')
-        trtag.append(tdtag)
+        td_tag = Tag(soup, name='td')
+        tr_tag.append(td_tag)
         if h in tdict:
             (abs_thresh, rel_thresh) = tdict[h]
-            tdtag.append(str(rel_thresh))
+            td_tag.append(str(rel_thresh))
         else:
-            tdtag.append('Relative threshold')
+            td_tag.append('Relative threshold')
 
     # Append table rows
     for i in range(0, len(hdict[horder[0]])):
-        trtag = Tag(soup, name='tr')
-        tabletag.append(trtag)
+        tr_tag = Tag(soup, name='tr')
+        table_tag.append(tr_tag)
         for h in horder:
             if h not in hdict:
-                tdtag = Tag(soup, name='td', attrs=[("class", "big")])
-                tdtag.append('ColumnHeadingDifference')
+                td_tag = Tag(soup, name='td', attrs={"class": "big"})
+                td_tag.append('ColumnHeadingDifference')
             elif h == 'DummyPlaceholder' or h == 'Subcategory':
                 # Some tables such as the Source Energy End Use Components
                 # have a blank row full of `<td>&nbsp;</td>` which won't be
                 # decoded nicely
-                tdtag = Tag(soup, name='td')
+                td_tag = Tag(soup, name='td')
                 val = hdict[h][i]
+                # noinspection PyBroadException
                 try:
-                    tdtag.append(str(val))
+                    td_tag.append(str(val))
                 except Exception:  # pragma: no cover
                     val = val.encode('ascii', 'ignore').decode('ascii')
-                    tdtag.append(str(val))
+                    td_tag.append(str(val))
             else:
                 (diff, which) = hdict[h][i]
-                tdtag = Tag(soup, name='td', attrs=[('class', which)])
+                td_tag = Tag(soup, name='td', attrs={'class': which})
+                # noinspection PyBroadException
                 try:
-                    tdtag.append(str(diff))
+                    td_tag.append(str(diff))
                 except Exception:  # pragma: no cover
                     diff = diff.encode('ascii', 'ignore').decode('ascii')
-                    tdtag.append(str(diff))
-            trtag.append(tdtag)
+                    td_tag.append(str(diff))
+            tr_tag.append(td_tag)
 
 
 # Convert html table to heading dictionary (and header list) in single step
@@ -231,12 +276,12 @@ def table2hdict_horder(table, table_a=None):
     # Create dictionary headings
     for htd in trows[0]('td'):
         try:
-            hcontents = htd.contents[0]
+            h_contents = htd.contents[0]
         except IndexError:
-            hcontents = 'DummyPlaceholder'
+            h_contents = 'DummyPlaceholder'
 
-        hdict[hcontents] = []
-        horder.append(hcontents)
+        hdict[h_contents] = []
+        horder.append(h_contents)
 
     # Assume we are going to just loop over the rows and compare the data
     search_rows = trows[1:]
@@ -290,16 +335,16 @@ def table2hdict_horder(table, table_a=None):
     for trow in search_rows:
         for htd, td in zip(trows[0]('td'), trow('td')):
             try:
-                hcontents = htd.contents[0]
+                h_contents = htd.contents[0]
             except IndexError:
-                hcontents = 'DummyPlaceholder'
+                h_contents = 'DummyPlaceholder'
 
             try:
                 contents = td.contents[0]
             except IndexError:
                 contents = ''
 
-            hdict[hcontents].append(contents)
+            hdict[h_contents].append(contents)
 
     return hdict, horder
 
@@ -322,33 +367,36 @@ def make_err_table_row(err_soup, tabletag, uheading, count_of_tables, abs_diff_f
 
     if small_diff > 0 or big_diff > 0 or string_diff > 0:
         file_name = os.path.basename(abs_diff_file)
-        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (file_name, count_of_tables))])
+        atag = Tag(err_soup, name='a', attrs={'href': f'{file_name}#tablehead{count_of_tables}'})
         atag.append('abs file')
         tdtag_abs_link.append(atag)
 
         file_name = os.path.basename(rel_diff_file)
-        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (file_name, count_of_tables))])
+        atag = Tag(err_soup, name='a', attrs={'href': f'{file_name}#tablehead{count_of_tables}'})
         atag.append('rel file')
         tdtag_rel_link.append(atag)
 
-    tdtag_big_diff = Tag(err_soup, name='td', attrs=[('class', 'big')] if big_diff > 0 else [])
+    tdtag_big_diff = Tag(err_soup, name='td', attrs={'class': 'big'} if big_diff > 0 else {})
     trtag.append(tdtag_big_diff)
     tdtag_big_diff.append(str(big_diff))
 
-    tdtag_small_diff = Tag(err_soup, name='td', attrs=[('class', 'small')] if small_diff > 0 else [])
+    tdtag_small_diff = Tag(err_soup, name='td', attrs={'class': 'small'} if small_diff > 0 else {})
     trtag.append(tdtag_small_diff)
     tdtag_small_diff.append(str(small_diff))
 
-    tdtag_equal = Tag(err_soup, name='td', attrs=[])
+    tdtag_equal = Tag(err_soup, name='td', attrs={})
     trtag.append(tdtag_equal)
     tdtag_equal.append(str(equal))
 
-    tdtag_string_diff = Tag(err_soup, name='td', attrs=[('class', 'stringdiff')] if string_diff > 0 else [])
+    tdtag_string_diff = Tag(err_soup, name='td', attrs={'class': 'stringdiff'} if string_diff > 0 else {})
     trtag.append(tdtag_string_diff)
     tdtag_string_diff.append(str(string_diff))
 
-    tdtag_table_size_error = Tag(err_soup, name='td', attrs=[
-        ('class', 'table_size_error')] if size_error > 0 or not_in_1 > 0 or not_in_2 > 0 else [])
+    tdtag_table_size_error = Tag(
+        err_soup,
+        name='td',
+        attrs={'class': 'table_size_error'} if size_error > 0 or not_in_1 > 0 or not_in_2 > 0 else {}
+    )
     trtag.append(tdtag_table_size_error)
     tdtag_table_size_error.append(
         'size mismatch' if size_error > 0 else 'not in 1' if not_in_1 > 0 else 'not in 2' if not_in_2 > 0 else '')
@@ -396,7 +444,7 @@ def table_diff(
                                   features='html.parser')
 
     # Make error table
-    tabletag = Tag(err_soup, name='table', attrs=[('border', '1')])
+    tabletag = Tag(err_soup, name='table', attrs={'border': '1'})
     err_soup.body.append(tabletag)
 
     # Make error table headings
@@ -519,7 +567,7 @@ def table_diff(
             count_of_big_diff += 1
 
         # Dictionaries of absolute and relative differences
-        diff_dict = {}
+        diff_dict: dict[str, list[CalculatedDiffBase]] = {}
         h_thresh_dict = {}
 
         for h in horder1:
@@ -527,7 +575,7 @@ def table_diff(
                 diff_dict[h] = hdict1[h]
             else:
                 if h not in horder2:
-                    diff_dict[h] = [[0, 0, 'big']] * (len(table1('tr')) - 1)
+                    diff_dict[h] = [CalculatedDiffNumeric(0, 0, DiffType.BIG)] * (len(table1('tr')) - 1)
                 else:
                     (abs_thresh, rel_thresh) = thresh_dict.lookup(h)
                     h_thresh_dict[h] = (abs_thresh, rel_thresh)
@@ -537,20 +585,20 @@ def table_diff(
 
                 # Statistics local to this table
                 for diff_result in diff_dict[h]:
-                    diff_type = diff_result[2]
+                    diff_type: DiffType = diff_result.type
                     if h == 'Version ID':
                         table_equal += 1
                         count_of_equal += 1
-                    elif diff_type == 'small':
+                    elif diff_type == DiffType.SMALL:
                         table_small_diff += 1
                         count_of_small_diff += 1
-                    elif diff_type == 'big':
+                    elif diff_type == DiffType.BIG:
                         table_big_diff += 1
                         count_of_big_diff += 1
-                    elif diff_type == 'equal':
+                    elif diff_type == DiffType.EQUAL:
                         table_equal += 1
                         count_of_equal += 1
-                    if diff_type == 'stringdiff':
+                    if diff_type == DiffType.STRING:
                         table_string_diff += 1
                         count_of_string_diff += 1
 
@@ -568,7 +616,7 @@ def table_diff(
             if h not in horder2:
                 continue
             abs_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
-                (x_y_z[0], x_y_z[2]) for x_y_z in diff_dict[h]]
+                (x_y_z.abs(), x_y_z.s_type()) for x_y_z in diff_dict[h]]
         hdict2soup(abs_diff_soup, uheading1, count_of_tables, abs_diff_dict.copy(), h_thresh_dict, horder1)
 
         rel_diff_dict = {}
@@ -576,7 +624,7 @@ def table_diff(
             if h not in horder2:
                 continue
             rel_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
-                (x_y_z[1], x_y_z[2]) for x_y_z in diff_dict[h]]
+                (x_y_z.rel(), x_y_z.s_type()) for x_y_z in diff_dict[h]]
         hdict2soup(rel_diff_soup, uheading1, count_of_tables, rel_diff_dict.copy(), h_thresh_dict, horder1)
 
         count_of_tables_diff += 1
