@@ -102,7 +102,7 @@ class DiffType(Enum):
     STRING = 'stringdiff'
 
 
-class CalculatedDiffBase():
+class CalculatedDiffBase:
     def __init__(self):
         self.type = DiffType.EQUAL
 
@@ -185,7 +185,7 @@ def get_table_unique_heading(table):
         return None
 
 
-def hdict2soup(soup, heading, num, hdict, tdict, horder):
+def hdict2soup(soup, heading, num, hdict, tdict, h_order):
     """Create soup table (including anchor and heading) from header dictionary and error dictionary"""
     # Append table anchor
     a_tag = Tag(soup, name='a', attrs={'name': f'tablehead{num}'})
@@ -203,7 +203,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
     # Append column headings
     tr_tag = Tag(soup, name='tr')
     table_tag.append(tr_tag)
-    for h in horder:
+    for h in h_order:
         td_tag = Tag(soup, name='th')
         if h != 'DummyPlaceholder':
             td_tag.append(str(h))
@@ -214,7 +214,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
     # Append column thresholds
     tr_tag = Tag(soup, name='tr')
     table_tag.append(tr_tag)
-    for h in horder:
+    for h in h_order:
         td_tag = Tag(soup, name='td')
         tr_tag.append(td_tag)
         if h in tdict:
@@ -225,7 +225,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
 
     tr_tag = Tag(soup, name='tr')
     table_tag.append(tr_tag)
-    for h in horder:
+    for h in h_order:
         td_tag = Tag(soup, name='td')
         tr_tag.append(td_tag)
         if h in tdict:
@@ -235,10 +235,10 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
             td_tag.append('Relative threshold')
 
     # Append table rows
-    for i in range(0, len(hdict[horder[0]])):
+    for i in range(0, len(hdict[h_order[0]])):
         tr_tag = Tag(soup, name='tr')
         table_tag.append(tr_tag)
-        for h in horder:
+        for h in h_order:
             if h not in hdict:
                 td_tag = Tag(soup, name='td', attrs={"class": "big"})
                 td_tag.append('ColumnHeadingDifference')
@@ -286,9 +286,9 @@ def table2hdict_horder(table, table_a=None):
     # Assume we are going to just loop over the rows and compare the data
     search_rows = trows[1:]
 
-    # But we can handle it specially if we passed in table_a and it's just a valid reorder
+    # But we can handle it specially if we passed in table_a, and it's just a valid reorder
     # There are some weird things to consider here though.  For example, some tables have multiple entirely blank
-    #  rows, just there for visual spacing.  Also there are tables where the far left entry is not unique.
+    #  rows, just there for visual spacing.  Also, there are tables where the far left entry is not unique.
     # Consider the End Uses by Subcategory table.  One row starts with "Heating" and then "General".
     # The next row then has nothing in the first column, but the second column is "Boiler".
     # This implies that "Heating" was a grouping, and "General" or "Boiler" is the actual subcategory.
@@ -321,9 +321,9 @@ def table2hdict_horder(table, table_a=None):
         # it's the same order exactly, skip any searching and just run with search_rows as-is
         if table_a_row_order == found_table_b_row_order:
             pass
-        # if not exactly the same but overall the same stuff, it's reordered and we can match things up
+        # if not exactly the same but overall the same stuff, it's reordered, and we can match things up
         elif sorted(table_a_row_order) == sorted(found_table_b_row_order):
-            # now just build the list of trows to search by index based on table a order
+            # now just build the list of trows to search by index based on table an order
             search_rows = []
             for to_find_val in table_a_row_order:
                 for search_row_index, trow in enumerate(trows[1:]):
@@ -349,56 +349,56 @@ def table2hdict_horder(table, table_a=None):
     return hdict, horder
 
 
-def make_err_table_row(err_soup, tabletag, uheading, count_of_tables, abs_diff_file, rel_diff_file,
+def make_err_table_row(err_soup, table_tag, u_heading, count_of_tables, abs_diff_file, rel_diff_file,
                        small_diff, big_diff, equal, string_diff, size_error, not_in_1, not_in_2):
     # Create entry in error table
-    trtag = Tag(err_soup, name='tr')
-    tabletag.append(trtag)
+    tr_tag = Tag(err_soup, name='tr')
+    table_tag.append(tr_tag)
 
-    tdtag_name = Tag(err_soup, name='td')
-    trtag.append(tdtag_name)
-    tdtag_name.append(uheading)
+    td_tag_name = Tag(err_soup, name='td')
+    tr_tag.append(td_tag_name)
+    td_tag_name.append(u_heading)
 
-    tdtag_abs_link = Tag(err_soup, name='td')
-    trtag.append(tdtag_abs_link)
+    td_tag_abs_link = Tag(err_soup, name='td')
+    tr_tag.append(td_tag_abs_link)
 
-    tdtag_rel_link = Tag(err_soup, name='td')
-    trtag.append(tdtag_rel_link)
+    td_tag_rel_link = Tag(err_soup, name='td')
+    tr_tag.append(td_tag_rel_link)
 
     if small_diff > 0 or big_diff > 0 or string_diff > 0:
         file_name = os.path.basename(abs_diff_file)
-        atag = Tag(err_soup, name='a', attrs={'href': f'{file_name}#tablehead{count_of_tables}'})
-        atag.append('abs file')
-        tdtag_abs_link.append(atag)
+        a_tag = Tag(err_soup, name='a', attrs={'href': f'{file_name}#tablehead{count_of_tables}'})
+        a_tag.append('abs file')
+        td_tag_abs_link.append(a_tag)
 
         file_name = os.path.basename(rel_diff_file)
-        atag = Tag(err_soup, name='a', attrs={'href': f'{file_name}#tablehead{count_of_tables}'})
-        atag.append('rel file')
-        tdtag_rel_link.append(atag)
+        a_tag = Tag(err_soup, name='a', attrs={'href': f'{file_name}#tablehead{count_of_tables}'})
+        a_tag.append('rel file')
+        td_tag_rel_link.append(a_tag)
 
-    tdtag_big_diff = Tag(err_soup, name='td', attrs={'class': 'big'} if big_diff > 0 else {})
-    trtag.append(tdtag_big_diff)
-    tdtag_big_diff.append(str(big_diff))
+    td_tag_big_diff = Tag(err_soup, name='td', attrs={'class': 'big'} if big_diff > 0 else {})
+    tr_tag.append(td_tag_big_diff)
+    td_tag_big_diff.append(str(big_diff))
 
-    tdtag_small_diff = Tag(err_soup, name='td', attrs={'class': 'small'} if small_diff > 0 else {})
-    trtag.append(tdtag_small_diff)
-    tdtag_small_diff.append(str(small_diff))
+    td_tag_small_diff = Tag(err_soup, name='td', attrs={'class': 'small'} if small_diff > 0 else {})
+    tr_tag.append(td_tag_small_diff)
+    td_tag_small_diff.append(str(small_diff))
 
-    tdtag_equal = Tag(err_soup, name='td', attrs={})
-    trtag.append(tdtag_equal)
-    tdtag_equal.append(str(equal))
+    td_tag_equal = Tag(err_soup, name='td', attrs={})
+    tr_tag.append(td_tag_equal)
+    td_tag_equal.append(str(equal))
 
-    tdtag_string_diff = Tag(err_soup, name='td', attrs={'class': 'stringdiff'} if string_diff > 0 else {})
-    trtag.append(tdtag_string_diff)
-    tdtag_string_diff.append(str(string_diff))
+    td_tag_string_diff = Tag(err_soup, name='td', attrs={'class': 'stringdiff'} if string_diff > 0 else {})
+    tr_tag.append(td_tag_string_diff)
+    td_tag_string_diff.append(str(string_diff))
 
-    tdtag_table_size_error = Tag(
+    td_tag_table_size_error = Tag(
         err_soup,
         name='td',
         attrs={'class': 'table_size_error'} if size_error > 0 or not_in_1 > 0 or not_in_2 > 0 else {}
     )
-    trtag.append(tdtag_table_size_error)
-    tdtag_table_size_error.append(
+    tr_tag.append(td_tag_table_size_error)
+    td_tag_table_size_error.append(
         'size mismatch' if size_error > 0 else 'not in 1' if not_in_1 > 0 else 'not in 2' if not_in_2 > 0 else '')
 
 
@@ -444,16 +444,16 @@ def table_diff(
                                   features='html.parser')
 
     # Make error table
-    tabletag = Tag(err_soup, name='table', attrs={'border': '1'})
-    err_soup.body.append(tabletag)
+    table_tag = Tag(err_soup, name='table', attrs={'border': '1'})
+    err_soup.body.append(table_tag)
 
     # Make error table headings
-    trtag = Tag(err_soup, name='tr')
-    tabletag.append(trtag)
+    tr_tag = Tag(err_soup, name='tr')
+    table_tag.append(tr_tag)
     for title in ['Table', 'Abs file', 'Rel file', 'Big diffs', 'Small diffs', 'Equals', 'String diffs', 'Size diffs']:
-        thtag = Tag(err_soup, name='th')
-        trtag.append(thtag)
-        thtag.append(title)
+        th_tag = Tag(err_soup, name='th')
+        tr_tag.append(th_tag)
+        th_tag.append(title)
 
     # Soup up the HTML input files
     soup2 = BeautifulSoup(txt2, features='html.parser')
@@ -462,21 +462,21 @@ def table_diff(
     tables1 = soup1('table')
     tables2 = soup2('table')
 
-    uheadings1 = []
-    uheadings2 = []
+    headings_1 = []
+    headings_2 = []
     for table in tables1:
-        uheadings1.append(get_table_unique_heading(table))
+        headings_1.append(get_table_unique_heading(table))
     for table in tables2:
-        uheadings2.append(get_table_unique_heading(table))
+        headings_2.append(get_table_unique_heading(table))
 
-    if any([x is None for x in uheadings1]):
+    if any([x is None for x in headings_1]):
         return 'malformed comment/table structure in <%s>' % input_file_1, 0, 0, 0, 0, 0, 0, 0, 0
-    if any([x is None for x in uheadings2]):
+    if any([x is None for x in headings_2]):
         return 'malformed comment/table structure in <%s>' % input_file_2, 0, 0, 0, 0, 0, 0, 0, 0
 
-    uhset1 = set(uheadings1)
-    uhset2 = set(uheadings2)
-    uhset_match = set.intersection(uhset1, uhset2)
+    headings_1_set = set(headings_1)
+    headings_2_set = set(headings_2)
+    matching_headings = headings_1_set & headings_2_set
 
     count_of_tables = 0
     count_of_tables_diff = 0
@@ -489,7 +489,7 @@ def table_diff(
     count_of_not_in_1 = 0
     count_of_not_in_2 = 0
 
-    for i1 in range(0, len(list(uheadings1))):
+    for i1 in range(0, len(list(headings_1))):
 
         count_of_tables += 1
 
@@ -501,29 +501,29 @@ def table_diff(
         table_not_in_1 = 0
         table_not_in_2 = 0
 
-        uheading1 = uheadings1[i1]
+        heading_1 = headings_1[i1]
 
         # There are some (for now one) tables that we will want to skip entirely because they are not useful for
         # throwing regressions, add search keys to this list to skip them
         completely_skippable_table_keys = [
             'Object Count Summary_Entire Facility_Input Fields'
         ]
-        if any([x in uheading1 for x in completely_skippable_table_keys]):
+        if any([x in heading_1 for x in completely_skippable_table_keys]):
             continue
 
         # Table missing in second input file
-        if uheading1 not in uhset_match:
+        if heading_1 not in matching_headings:
             table_not_in_2 = 1
             count_of_not_in_2 += table_not_in_2
             table_big_diff = 1
             count_of_big_diff += table_big_diff
-            make_err_table_row(err_soup, tabletag, uheading1, count_of_tables, abs_diff_file, rel_diff_file,
+            make_err_table_row(err_soup, table_tag, heading_1, count_of_tables, abs_diff_file, rel_diff_file,
                                table_small_diff, table_big_diff, table_equal, table_string_diff, table_size_error,
                                table_not_in_1, table_not_in_2)
             continue
 
         table1 = tables1[i1]
-        table2 = tables2[uheadings2.index(uheading1)]
+        table2 = tables2[headings_2.index(heading_1)]
 
         # Table size error
         if len(table1('tr')) != len(table2('tr')) or len(table1('td')) != len(table2('td')):
@@ -531,24 +531,24 @@ def table_diff(
             count_of_size_error += table_size_error
             table_big_diff = 1
             count_of_big_diff += table_big_diff
-            make_err_table_row(err_soup, tabletag, uheading1, count_of_tables, abs_diff_file, rel_diff_file,
+            make_err_table_row(err_soup, table_tag, heading_1, count_of_tables, abs_diff_file, rel_diff_file,
                                table_small_diff, table_big_diff, table_equal, table_string_diff, table_size_error,
                                table_not_in_1, table_not_in_2)
             continue
 
-        # create a list of order-dependent table uheading keys, tables that include these keys in the name
+        # create a list of order-dependent table heading keys, tables that include these keys in the name
         # these will use strict row order enforcement
         row_order_dependent_table_keys = ['Monthly', 'Topology']
 
         # always process the first table into a base hdict
-        hdict1, horder1 = table2hdict_horder(table1)
+        hdict1, order_1 = table2hdict_horder(table1)
 
         # if we are in a row order dependent table, don't pass table1 as a baseline, just use the literal in-place order
-        if any(k in uheading1 for k in row_order_dependent_table_keys):
-            hdict2, horder2 = table2hdict_horder(table2)
+        if any(k in heading_1 for k in row_order_dependent_table_keys):
+            hdict2, order_2 = table2hdict_horder(table2)
         # but for all other tables, we can use the first table as a baseline to carefully match up the rows
         else:
-            hdict2, horder2 = table2hdict_horder(table2, table1)
+            hdict2, order_2 = table2hdict_horder(table2, table1)
 
         # honestly, if the column headings have changed, this should be an indicator to all reviewers that this needs
         # up close investigation.  As such, we are going to trigger the following things:
@@ -558,7 +558,7 @@ def table_diff(
         #    even if it is duplicate, it is different because there is another one)
         # 3) a table_big_diff here, because something has definitely changed that needs attention
         # 4) each datum in each row that doesn't have a match should trigger a big diff as well later
-        if any([h not in horder2 for h in horder1]) or any([h not in horder1 for h in horder2]):
+        if any([h not in order_2 for h in order_1]) or any([h not in order_1 for h in order_2]):
             table_size_error += 1
             count_of_size_error += 1
             table_string_diff += 1
@@ -570,11 +570,11 @@ def table_diff(
         diff_dict: dict[str, list[CalculatedDiffBase]] = {}
         h_thresh_dict = {}
 
-        for h in horder1:
+        for h in order_1:
             if h == 'DummyPlaceholder':
                 diff_dict[h] = hdict1[h]
             else:
-                if h not in horder2:
+                if h not in order_2:
                     diff_dict[h] = [CalculatedDiffNumeric(0, 0, DiffType.BIG)] * (len(table1('tr')) - 1)
                 else:
                     (abs_thresh, rel_thresh) = thresh_dict.lookup(h)
@@ -602,7 +602,7 @@ def table_diff(
                         table_string_diff += 1
                         count_of_string_diff += 1
 
-        make_err_table_row(err_soup, tabletag, uheading1, count_of_tables, abs_diff_file, rel_diff_file,
+        make_err_table_row(err_soup, table_tag, heading_1, count_of_tables, abs_diff_file, rel_diff_file,
                            table_small_diff, table_big_diff, table_equal, table_string_diff, table_size_error,
                            table_not_in_1, table_not_in_2)
 
@@ -612,28 +612,28 @@ def table_diff(
 
         # Add difference tables to absolute and relative difference soups
         abs_diff_dict = {}
-        for h in horder1:
-            if h not in horder2:
+        for h in order_1:
+            if h not in order_2:
                 continue
             abs_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
                 (x_y_z.abs(), x_y_z.s_type()) for x_y_z in diff_dict[h]]
-        hdict2soup(abs_diff_soup, uheading1, count_of_tables, abs_diff_dict.copy(), h_thresh_dict, horder1)
+        hdict2soup(abs_diff_soup, heading_1, count_of_tables, abs_diff_dict.copy(), h_thresh_dict, order_1)
 
         rel_diff_dict = {}
-        for h in horder1:
-            if h not in horder2:
+        for h in order_1:
+            if h not in order_2:
                 continue
             rel_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
                 (x_y_z.rel(), x_y_z.s_type()) for x_y_z in diff_dict[h]]
-        hdict2soup(rel_diff_soup, uheading1, count_of_tables, rel_diff_dict.copy(), h_thresh_dict, horder1)
+        hdict2soup(rel_diff_soup, heading_1, count_of_tables, rel_diff_dict.copy(), h_thresh_dict, order_1)
 
         count_of_tables_diff += 1
 
-    for uheading2 in uheadings2:
-        if uheading2 not in uhset_match:
+    for heading_2 in headings_2:
+        if heading_2 not in matching_headings:
             count_of_tables += 1
             count_of_not_in_1 += 1
-            make_err_table_row(err_soup, tabletag, uheading2, count_of_tables, abs_diff_file, rel_diff_file,
+            make_err_table_row(err_soup, table_tag, heading_2, count_of_tables, abs_diff_file, rel_diff_file,
                                0, 0, 0, 0, 0, 1, 0)
 
     # Write error file
