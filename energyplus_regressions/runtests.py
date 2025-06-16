@@ -33,9 +33,12 @@ from energyplus_regressions.structures import (
     TestEntry
 )
 from multiprocessing import Pool
+from typing import Callable
 
 # get the current file path for convenience
 script_dir = Path(__file__).resolve().parent
+
+RunArgs = tuple[TestEntry, BuildTree, BuildTree, str, Path]
 
 
 class TestRunConfiguration:
@@ -69,7 +72,7 @@ class TestCaseCompleted:
 # the actual main test suite run class
 class SuiteRunner:
 
-    def __init__(self, run_config: TestRunConfiguration, these_entries, mute=False):
+    def __init__(self, run_config: TestRunConfiguration, these_entries: list[TestEntry], mute=False):
 
         # initialize the master mute button -- this is overridden by registering callbacks
         self.mute = mute
@@ -122,7 +125,7 @@ class SuiteRunner:
         # For files that don't have a specified weather file, use Chicago
         self.default_weather_filename = "USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.epw"
 
-    def run_test_suite(self):
+    def run_test_suite(self) -> None:
 
         # reset this flag
         self.id_like_to_stop_now = False
@@ -172,7 +175,7 @@ class SuiteRunner:
         self.my_print("Test suite complete")
 
         self.my_all_done(self.completed_structure)
-        return self.completed_structure
+        return
 
     def prepare_dir_structure(self, b_a: BuildTree, b_b: BuildTree, d_test: str):
         # make tests directory as needed
@@ -296,7 +299,8 @@ class SuiteRunner:
             if full_input_file_path.name.endswith('.idf'):
                 ep_in_filename = "in.idf"
             elif full_input_file_path.name.endswith('.imf'):
-                ep_in_filename = "in.imf"
+                # noinspection PyUnusedLocal
+                ep_in_filename = "in.imf"  # this is so weird, PyCharm really thinks this isn't used, but it is!
                 # find the rest of the imf files and copy them into the test directory
                 for full_file_name in test_files_dir.iterdir():
                     if full_file_name.name[-4:] == '.imf':
@@ -820,7 +824,7 @@ class SuiteRunner:
     def process_diffs_for_one_case(
             this_entry, build_tree_a: BuildTree, build_tree_b: BuildTree,
             test_output_dir, thresh_dict_file, ci_mode=False
-    ):
+    ) -> tuple[TestEntry, str]:
 
         if ci_mode:  # in "ci_mode" the build directory is actually the output directory of each file
             case_result_dir_1 = build_tree_a.build_dir
@@ -1123,7 +1127,6 @@ class SuiteRunner:
 
     # diff_logs_for_build creates diff logs between simulations in two build directories
     def diff_logs_for_build(self, original_start_time: datetime):
-
         self.completed_structure = CompletedStructure(
             self.build_tree_a.source_dir, self.build_tree_a.build_dir,
             self.build_tree_b.source_dir, self.build_tree_b.build_dir,
@@ -1131,16 +1134,16 @@ class SuiteRunner:
             self.build_tree_b.build_dir / self.test_output_dir,
             original_start_time
         )
-        diff_runs = []
+        diff_runs: list[RunArgs] = []
         for this_entry in self.entries:
             diff_runs.append(
-                [
+                (
                     this_entry,
                     self.build_tree_a,
                     self.build_tree_b,
                     self.test_output_dir,
                     self.thresh_dict_file
-                ]
+                )
             )
 
         if self.number_of_threads == 1 or frozen and system() in ['Windows', 'Darwin']:  # pragma: no cover
@@ -1152,11 +1155,15 @@ class SuiteRunner:
         else:  # for all other applications, run them in a multiprocessing pool
             p = Pool(self.number_of_threads)
             for run in diff_runs:
-                p.apply_async(self.diff_wrapper, (run,), callback=self.diff_done, error_callback=self.diff_done)
+                p.apply_async(
+                    self.diff_wrapper, (run,),
+                    callback=self.diff_done,
+                    error_callback=lambda e: self.diff_failed(run[0])
+                )
             p.close()
             p.join()
 
-    def diff_wrapper(self, run_args):  # pragma: no cover -- this is being skipped by coverage?
+    def diff_wrapper(self, run_args: RunArgs):  # pragma: no cover -- this is being skipped by coverage?
         if self.id_like_to_stop_now:
             return run_args[0], "Stopped by request"
         try:
@@ -1168,25 +1175,35 @@ class SuiteRunner:
             msg += f"Message: {e}"
             return run_args[0], msg
 
-    def diff_done(self, results):
+    def diff_failed(self, this_entry: TestEntry) -> None:
+        self.my_print("Error in diffing: %s" % str(this_entry.basename))
+        self.my_diff_completed(this_entry.basename)
+        self.completed_structure.add_test_entry(this_entry)
+
+    def diff_done(self, results: tuple[TestEntry, str]):
         this_entry, message = results
         self.my_print(message)
         self.my_diff_completed(this_entry.basename)
         self.completed_structure.add_test_entry(this_entry)
 
-    def add_callbacks(self, print_callback, sim_starting_callback, case_completed_callback,
-                      simulations_complete_callback,
-                      diff_completed_callback, all_done_callback, cancel_callback):
+    def add_callbacks(self,
+                      cb_print: Callable[[str], None],
+                      cb_sim_start: Callable[[int], None],
+                      cb_case_complete: Callable[[TestCaseCompleted], None],
+                      cb_sims_complete: Callable[[], None],
+                      cb_diffs_complete: Callable[[], None],
+                      cb_all_done: Callable[[CompletedStructure], None],
+                      cb_cancel: Callable[[], None]) -> None:
         self.mute = False
-        self.print_callback = print_callback
-        self.starting_callback = sim_starting_callback
-        self.case_completed_callback = case_completed_callback
-        self.simulations_complete_callback = simulations_complete_callback
-        self.diff_completed_callback = diff_completed_callback
-        self.all_done_callback = all_done_callback
-        self.cancel_callback = cancel_callback
+        self.print_callback = cb_print
+        self.starting_callback = cb_sim_start
+        self.case_completed_callback = cb_case_complete
+        self.simulations_complete_callback = cb_sims_complete
+        self.diff_completed_callback = cb_diffs_complete
+        self.all_done_callback = cb_all_done
+        self.cancel_callback = cb_cancel
 
-    def my_print(self, msg):
+    def my_print(self, msg: str):
         if self.mute:
             return
         if self.print_callback:
@@ -1195,7 +1212,7 @@ class SuiteRunner:
         else:  # pragma: no cover
             print(msg)
 
-    def my_starting(self, number_of_cases_per_build):
+    def my_starting(self, number_of_cases_per_build: int):
         if self.mute:
             return
         if self.starting_callback:
@@ -1207,7 +1224,7 @@ class SuiteRunner:
                 )
             )
 
-    def my_case_completed(self, test_case_completed_instance):
+    def my_case_completed(self, test_case_completed_instance: TestCaseCompleted):
         if self.mute:
             return
         if self.case_completed_callback:
@@ -1228,7 +1245,7 @@ class SuiteRunner:
         else:  # pragma: no cover
             self.my_print("Completed all simulations")
 
-    def my_diff_completed(self, case_name):
+    def my_diff_completed(self, case_name: str):
         if self.mute:
             return
         if self.diff_completed_callback:
@@ -1325,9 +1342,10 @@ if __name__ == "__main__":  # pragma: no cover
                                      build_b=mod)
 
     # instantiate the test suite
-    Runner = SuiteRunner(RunConfig, entries)
+    runner = SuiteRunner(RunConfig, entries)
 
     # Run it
-    response = Runner.run_test_suite()
+    runner.run_test_suite()
+    response = runner.completed_structure
 
     print(response.to_json_summary(args.output_file))

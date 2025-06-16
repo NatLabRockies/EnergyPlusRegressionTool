@@ -196,7 +196,6 @@ def abs_diff(x, y):
     # noinspection PyBroadException
     try:
         return abs(float(x) - float(y))
-    #        return (float(x)-float(y))
     except Exception:
         return 9999  # 'exception'
 
@@ -207,7 +206,6 @@ def rel_diff(x, y):
     # noinspection PyBroadException
     try:
         return abs((float(x) - float(y)) / (float(x))) if (abs(float(x)) > 0) else 999
-    #        return (float(x)-float(y))/(float(x)+.00001)
     except Exception:
         return 9999  # 'exception'
 
@@ -492,7 +490,7 @@ def main(argv=None):  # pragma: no cover
         opts, args = getopt.getopt(argv[1:], "ho:v", ["help", "output="])
     except getopt.error as msg:
         info(sys.argv[0].split("/")[-1] + ": " + str(msg) + "\n\t for help use --help")
-        return -1
+        return 1
 
     # Test for correct number of arguments
     prog_name = os.path.basename(sys.argv[0])
@@ -500,15 +498,15 @@ def main(argv=None):  # pragma: no cover
         [csv1, csv2, abs_diff_file, rel_diff_file, err_file, csv_summary] = args
     else:
         info('%s: incorrect operands: Try %s -h for more info' % (prog_name, prog_name))
-        return -1
+        return 1
 
     if csv1[-4:] != '.csv' or csv1[-7:] == 'Map.csv' or csv1[-9:] == 'Table.csv' or csv1[-10:] == 'Screen.csv':
         info('%s: input file <%s> with improper extension' % (prog_name, csv1))
-        return -1
+        return 1
 
     if csv2[-4:] != '.csv' or csv2[-7:] == 'Map.csv' or csv2[-9:] == 'Table.csv' or csv2[-10:] == 'Screen.csv':
         info('%s: input file <%s> with improper extension' % (prog_name, csv2))
-        return -1
+        return 1
 
     # Load diffing threshold dictionary
     thresh_dict = ThreshDict(os.path.join(script_dir, 'math_diff.config'))

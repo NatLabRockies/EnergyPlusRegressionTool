@@ -186,17 +186,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -287,7 +279,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -371,7 +364,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -428,7 +422,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -483,7 +478,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -538,7 +534,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -593,7 +590,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -648,7 +646,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -703,7 +702,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -757,17 +757,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -838,17 +830,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -920,7 +904,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -983,7 +968,8 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_b=mod
         )
         r = SuiteRunner(config, entries, mute=True)
-        diff_results = r.run_test_suite()
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1032,17 +1018,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(2, len(diff_results.entries_by_file))
         # these next blocks are pragma -ed from coverage because we don't know which one will get hit
@@ -1112,17 +1090,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1183,17 +1153,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1254,17 +1216,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1325,17 +1279,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1396,17 +1342,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1467,17 +1405,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1538,17 +1468,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1611,17 +1533,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1683,17 +1597,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1754,17 +1660,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1828,17 +1726,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1900,17 +1790,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -1966,17 +1848,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             force_output_sql=ForceOutputSQL.SIMPLE,
             force_output_sql_unitconv=ForceOutputSQLUnitConversion.NONE
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -2037,17 +1911,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -2104,17 +1970,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -2169,17 +2027,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]
@@ -2234,17 +2084,9 @@ class TestTestSuiteRunner(unittest.TestCase):
             build_a=base,
             build_b=mod
         )
-        r = SuiteRunner(config, entries)
-        r.add_callbacks(
-            print_callback=TestTestSuiteRunner.dummy_callback,
-            sim_starting_callback=TestTestSuiteRunner.dummy_callback,
-            case_completed_callback=TestTestSuiteRunner.dummy_callback,
-            simulations_complete_callback=TestTestSuiteRunner.dummy_callback,
-            diff_completed_callback=TestTestSuiteRunner.dummy_callback,
-            all_done_callback=TestTestSuiteRunner.dummy_callback,
-            cancel_callback=TestTestSuiteRunner.dummy_callback
-        )
-        diff_results = r.run_test_suite()
+        r = SuiteRunner(config, entries, mute=True)
+        r.run_test_suite()
+        diff_results = r.completed_structure
         # there should be 1 file result
         self.assertEqual(1, len(diff_results.entries_by_file))
         results_for_file = diff_results.entries_by_file[0]

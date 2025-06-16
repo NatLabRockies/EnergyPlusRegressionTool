@@ -20,7 +20,7 @@ from tkinter import (
     END, LEFT, TOP,  # relative directions (RIGHT, TOP)
     filedialog, simpledialog,  # system dialogs
 )
-from typing import List, Union
+from typing import List, Union, cast, Literal
 
 from plan_tools.runtime import fixup_taskbar_icon_on_windows
 from pubsub import pub
@@ -293,24 +293,33 @@ class MyApp(Frame):
                               ('active', 'white')]
                   )
 
+        # oof, Pycharm is being dumb, not realizing that the X coming from tkinter is indeed just the Literal['x']
+        # so I get lots of argument warnings.  I'm going to cast it to a Literal['x'] to make it happy.
+        x_type = cast(Literal['x'], X)
+        y_type = cast(Literal['y'], Y)
+        w_type = cast(Literal['w'], W)
+        left_type = cast(Literal['left'], LEFT)
+        both_type = cast(Literal['both'], BOTH)
+        top_type = cast(Literal['top'], TOP)
+
         # run configuration
         pane_run = Frame(self.main_notebook)
         group_build_dir_1 = LabelFrame(pane_run, text="Build Directory 1")
-        group_build_dir_1.pack(fill=X, padx=5)
+        group_build_dir_1.pack(fill=x_type, padx=5)
         self.build_dir_1_button = ttk.Button(group_build_dir_1, text="Change...", command=self.client_build_dir_1,
                                              style="C.TButton")
         self.build_dir_1_button.grid(row=1, column=1, sticky=W)
         build_dir_1_label = Label(group_build_dir_1, textvariable=self.build_dir_1_var)
         build_dir_1_label.grid(row=1, column=2, sticky=E)
         group_build_dir_2 = LabelFrame(pane_run, text="Build Directory 2")
-        group_build_dir_2.pack(fill=X, padx=5)
+        group_build_dir_2.pack(fill=x_type, padx=5)
         self.build_dir_2_button = ttk.Button(group_build_dir_2, text="Change...", command=self.client_build_dir_2,
                                              style="C.TButton")
         self.build_dir_2_button.grid(row=1, column=1, sticky=W)
         build_dir_2_label = Label(group_build_dir_2, textvariable=self.build_dir_2_var)
         build_dir_2_label.grid(row=1, column=2, sticky=E)
         group_run_options = LabelFrame(pane_run, text="Run Options")
-        group_run_options.pack(fill=X, padx=5)
+        group_run_options.pack(fill=x_type, padx=5)
         # row 1
         Label(group_run_options, text="Number of threads for suite: ").grid(row=1, column=1, sticky=E)
         self.num_threads_spinner = Spinbox(group_run_options, from_=1, to=48, textvariable=self.num_threads_var)
@@ -349,43 +358,43 @@ class MyApp(Frame):
         # now let's set up a list of checkboxes for selecting IDFs to run
         pane_idfs = Frame(self.main_notebook)
         group_idf_tools = LabelFrame(pane_idfs, text="IDF Selection Tools")
-        group_idf_tools.pack(fill=X, padx=5)
+        group_idf_tools.pack(fill=x_type, padx=5)
         self.idf_select_all_button = ttk.Button(
             group_idf_tools, text="Refresh", command=self.build_idf_listing, style="C.TButton"
         )
-        self.idf_select_all_button.pack(side=LEFT, expand=1)
+        self.idf_select_all_button.pack(side=left_type, expand=1)
         self.idf_select_all_button = ttk.Button(
             group_idf_tools, text="Select All", command=self.idf_select_all, style="C.TButton"
         )
-        self.idf_select_all_button.pack(side=LEFT, expand=1)
+        self.idf_select_all_button.pack(side=left_type, expand=1)
         self.idf_select_almost_all_button = ttk.Button(
             group_idf_tools, text="Select All Except Long Runs", command=self.idf_select_all_except_long_runs
         )
-        self.idf_select_almost_all_button.pack(side=LEFT, expand=1)
+        self.idf_select_almost_all_button.pack(side=left_type, expand=1)
         self.idf_deselect_all_button = ttk.Button(
             group_idf_tools, text="Deselect All", command=self.idf_deselect_all, style="C.TButton"
         )
-        self.idf_deselect_all_button.pack(side=LEFT, expand=1)
+        self.idf_deselect_all_button.pack(side=left_type, expand=1)
         self.idf_select_n_random_button = ttk.Button(
             group_idf_tools, text="Select N Random...", command=self.idf_select_random, style="C.TButton"
         )
-        self.idf_select_n_random_button.pack(side=LEFT, expand=1)
+        self.idf_select_n_random_button.pack(side=left_type, expand=1)
         self.idf_select_from_list_button = ttk.Button(
             group_idf_tools, text="Select From List...", command=self.idf_select_list, style="C.TButton"
         )
-        self.idf_select_from_list_button.pack(side=LEFT, expand=1)
+        self.idf_select_from_list_button.pack(side=left_type, expand=1)
         self.idf_select_from_containing_button = ttk.Button(
             group_idf_tools, text="Select Files Containing...", command=self.idf_select_containing, style="C.TButton"
         )
-        self.idf_select_from_containing_button.pack(side=LEFT, expand=1)
+        self.idf_select_from_containing_button.pack(side=left_type, expand=1)
 
         group_full_idf_list = LabelFrame(pane_idfs, text="Full IDF List")
-        group_full_idf_list.pack(fill=BOTH, expand=True, padx=5)
+        group_full_idf_list.pack(fill=both_type, expand=True, padx=5)
         scrollbar = Scrollbar(group_full_idf_list)
         self.full_idf_listbox = Listbox(group_full_idf_list, yscrollcommand=scrollbar.set, selectmode="extended")
         self.full_idf_listbox.bind('<Double-1>', self.idf_move_to_active)
-        self.full_idf_listbox.pack(fill=BOTH, side=LEFT, expand=True)
-        scrollbar.pack(fill=Y, side=LEFT)
+        self.full_idf_listbox.pack(fill=both_type, side=left_type, expand=True)
+        scrollbar.pack(fill=y_type, side=left_type)
         scrollbar.config(command=self.full_idf_listbox.yview)
 
         down_arrows = "  ↓  " * 4
@@ -393,22 +402,22 @@ class MyApp(Frame):
             pane_idfs, text=down_arrows + "Add to Active List" + down_arrows, command=self.idf_move_to_active,
             style="C.TButton"
         )
-        self.move_idf_to_active_button.pack(side=TOP, fill=X, expand=False)
+        self.move_idf_to_active_button.pack(side=top_type, fill=x_type, expand=False)
 
         up_arrows = "  ↑  " * 4
         self.remove_idf_from_active_button = ttk.Button(
             pane_idfs, text=up_arrows + "Remove from Active List" + up_arrows, command=self.idf_remove_from_active,
             style="C.TButton"
         )
-        self.remove_idf_from_active_button.pack(side=TOP, fill=X, expand=False)
+        self.remove_idf_from_active_button.pack(side=top_type, fill=x_type, expand=False)
 
         group_active_idf_list = LabelFrame(pane_idfs, text="Active IDF List")
-        group_active_idf_list.pack(fill=BOTH, expand=True, padx=5)
+        group_active_idf_list.pack(fill=both_type, expand=True, padx=5)
         scrollbar = Scrollbar(group_active_idf_list)
         self.active_idf_listbox = Listbox(group_active_idf_list, yscrollcommand=scrollbar.set, selectmode="extended")
         self.active_idf_listbox.bind('<Double-1>', self.idf_remove_from_active)
-        self.active_idf_listbox.pack(fill=BOTH, side=LEFT, expand=True)
-        scrollbar.pack(fill=Y, side=LEFT)
+        self.active_idf_listbox.pack(fill=both_type, side=left_type, expand=True)
+        scrollbar.pack(fill=y_type, side=left_type)
         scrollbar.config(command=self.active_idf_listbox.yview)
 
         self.build_idf_listing(initialize=True)
@@ -418,16 +427,16 @@ class MyApp(Frame):
         # set up a scrolled listbox for the log messages
         frame_log_messages = Frame(self.main_notebook)
         group_log_messages = LabelFrame(frame_log_messages, text="Log Message Tools")
-        group_log_messages.pack(fill=X, padx=5)
+        group_log_messages.pack(fill=x_type, padx=5)
         ttk.Button(group_log_messages, text="Clear Log Messages", command=self.clear_log, style="C.TButton").pack(
-            side=LEFT, expand=1)
+            side=left_type, expand=1)
         ttk.Button(group_log_messages, text="Copy Log Messages", command=self.copy_log, style="C.TButton").pack(
-            side=LEFT, expand=1)
+            side=left_type, expand=1)
         scrollbar = Scrollbar(frame_log_messages)
         self.log_message_listbox = Listbox(frame_log_messages, yscrollcommand=scrollbar.set)
         self.add_to_log("Program started!")
-        self.log_message_listbox.pack(fill=BOTH, side=LEFT, expand=True)
-        scrollbar.pack(fill=Y, side=LEFT)
+        self.log_message_listbox.pack(fill=both_type, side=left_type, expand=True)
+        scrollbar.pack(fill=y_type, side=left_type)
         scrollbar.config(command=self.log_message_listbox.yview)
         self.main_notebook.add(frame_log_messages, text="Log Messages")
 
@@ -444,27 +453,27 @@ class MyApp(Frame):
         self.results_tree.heading("Mod File", text="Mod File")
         self.results_tree.column("Mod File", minwidth=100, width=100)
         self.build_results_tree()
-        self.results_tree.pack(fill=BOTH, side=LEFT, expand=True)
-        scrollbar.pack(fill=Y, side=LEFT)
+        self.results_tree.pack(fill=both_type, side=left_type, expand=True)
+        scrollbar.pack(fill=y_type, side=left_type)
         scrollbar.config(command=self.results_tree.yview)
         self.main_notebook.add(frame_results, text="Results (initialized)")
 
         # pack the main notebook on the window
-        self.main_notebook.pack(fill=BOTH, expand=1)
+        self.main_notebook.pack(fill=both_type, expand=1)
 
         # status bar at the bottom
         frame_status = Frame(self.root)
         self.run_button = ttk.Button(frame_status, text="Run", command=self.client_run, style="C.TButton")
-        self.run_button.pack(side=LEFT, expand=0)
+        self.run_button.pack(side=left_type, expand=0)
         self.stop_button = ttk.Button(frame_status, text="Stop", command=self.client_stop, state='disabled',
                                       style="C.TButton")
-        self.stop_button.pack(side=LEFT, expand=0)
+        self.stop_button.pack(side=left_type, expand=0)
         self.progress = ttk.Progressbar(frame_status, length=250)
-        self.progress.pack(side=LEFT, expand=0)
+        self.progress.pack(side=left_type, expand=0)
         label = Label(frame_status, textvariable=self.label_string)
         self.label_string.set("Initialized")
-        label.pack(side=LEFT, anchor=W)
-        frame_status.pack(fill=X)
+        label.pack(side=left_type, anchor=w_type)
+        frame_status.pack(fill=x_type)
 
     def run(self):
         self.root.mainloop()
@@ -1104,13 +1113,13 @@ class MyApp(Frame):
             messagebox.showwarning("Nothing to run", "No IDFs were activated, so nothing to run")
             return
         self.background_operator = SuiteRunner(run_configuration, idfs_to_run)
-        self.background_operator.add_callbacks(print_callback=MyApp.print_listener,
-                                               sim_starting_callback=MyApp.starting_listener,
-                                               case_completed_callback=MyApp.case_completed_listener,
-                                               simulations_complete_callback=MyApp.runs_complete_listener,
-                                               diff_completed_callback=MyApp.diff_complete_listener,
-                                               all_done_callback=MyApp.done_listener,
-                                               cancel_callback=MyApp.cancelled_listener)
+        self.background_operator.add_callbacks(cb_print=MyApp.print_listener,
+                                               cb_sim_start=MyApp.starting_listener,
+                                               cb_case_complete=MyApp.case_completed_listener,
+                                               cb_sims_complete=MyApp.runs_complete_listener,
+                                               cb_diffs_complete=MyApp.diff_complete_listener,
+                                               cb_all_done=MyApp.done_listener,
+                                               cb_cancel=MyApp.cancelled_listener)
         self.set_gui_status_for_run(True)
         self.long_thread = Thread(target=self.background_operator.run_test_suite)
         self.long_thread.daemon = True
@@ -1118,20 +1127,20 @@ class MyApp(Frame):
         self.long_thread.start()
 
     @staticmethod
-    def print_listener(msg):
+    def print_listener(msg: str):
         pub.sendMessage(PubSubMessageTypes.PRINT, msg=msg)
 
     def print_handler(self, msg):
         self.add_to_log(msg)
 
     @staticmethod
-    def starting_listener(number_of_cases_per_build):
+    def starting_listener(number_of_cases_per_build: int):
         pub.sendMessage(
             PubSubMessageTypes.STARTING,
             number_of_cases_per_build=number_of_cases_per_build
         )
 
-    def starting_handler(self, number_of_cases_per_build):
+    def starting_handler(self, number_of_cases_per_build: int):
         self.progress['maximum'] = 3 * number_of_cases_per_build
         self.progress['value'] = 0
 
