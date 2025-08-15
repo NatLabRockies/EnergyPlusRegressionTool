@@ -112,6 +112,12 @@ class TestTestSuiteRunner(unittest.TestCase):
         for cbor_file_to_prepare in cbor_files_to_prepare:
             with (testfiles_dir / cbor_file_to_prepare).open('w') as f_cbor:
                 f_cbor.write('CBOR')
+        json_files_to_prepare = [
+            'residential-dx.RS0004.json',
+        ]
+        for json_file_to_prepare in json_files_to_prepare:
+            with (testfiles_dir / json_file_to_prepare).open('w') as f_json:
+                f_json.write('JSON')
         if py_file:
             with (idf_dir / "my_file.py").open('w') as f:
                 f.write("hello")

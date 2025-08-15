@@ -409,7 +409,7 @@ class CompletedStructure:
         self.results_dir_a = results_dir_a
         self.results_dir_b = results_dir_b
         # results by file
-        self.entries_by_file = []
+        self.entries_by_file: list[TestEntry] = []
         # results by type
         self.all_files = Results()
         self.success_case_a = Results()

@@ -9,13 +9,10 @@ from pathlib import Path
 from platform import system
 import shutil
 import sys
-
-if getattr(sys, 'frozen', False):  # pragma: no cover -- not covering frozen apps in unit tests
-    frozen = True
-else:
-    frozen = False
-
+from multiprocessing import Pool
+from typing import Callable
 from difflib import unified_diff  # python's own diff library
+
 
 from energyplus_regressions.builds.base import BuildTree, BaseBuildDirectoryStructure
 from energyplus_regressions.diffs import math_diff, table_diff, thresh_dict as td
@@ -32,8 +29,12 @@ from energyplus_regressions.structures import (
     ForceOutputSQLUnitConversion,
     TestEntry
 )
-from multiprocessing import Pool
-from typing import Callable
+from energyplus_regressions.results import RegressionManager
+
+if getattr(sys, 'frozen', False):  # pragma: no cover -- not covering frozen apps in unit tests
+    frozen = True
+else:
+    frozen = False
 
 # get the current file path for convenience
 script_dir = Path(__file__).resolve().parent
@@ -174,6 +175,7 @@ class SuiteRunner:
         self.my_print(" --build-2--> %s" % self.build_tree_b.build_dir)
         self.my_print("Test suite complete")
 
+        RegressionManager(mute=True).build_summary_content(self.completed_structure)
         self.my_all_done(self.completed_structure)
         return
 
@@ -395,12 +397,13 @@ class SuiteRunner:
 
             if ':ASHRAE205' in idf_text:
                 # need to copy in the cbor data files so that they can run
-                cbor_files = [
+                supporting_205_files = [
                     'CoolSys1-Chiller.RS0001.a205.cbor',
                     'A205ExampleChiller.RS0001.a205.cbor',
                     'CoolSys1-Chiller-Detailed.RS0001.a205.cbor',
+                    'residential-dx.RS0004.json',
                 ]
-                for cbor_file in cbor_files:
+                for cbor_file in supporting_205_files:
                     shutil.copy(
                         build_tree.test_files_dir / cbor_file,
                         test_run_directory / cbor_file
