@@ -100,6 +100,8 @@ def thresh_abs_rel_diff(abs_thresh: float, rel_thresh: float, x: str, y: str) ->
     try:
         fx = float(x)
         fy = float(y)
+        if fx == fy:
+            return 0, 0, 'equal'
         abs_diff = abs(fx - fy)
         rel_diff = abs((fx - fy) / fx) if abs(fx) > abs(fy) else abs((fy - fx) / fy)
         diff = 'equal'
