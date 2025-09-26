@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 from collections import defaultdict
 import csv
-from datetime import datetime, UTC
+# from datetime import datetime, UTC
 import json
-from shutil import copy
+# from shutil import copy
 from pathlib import Path
 import sys
-from shutil import rmtree
-from traceback import print_exc
-from zoneinfo import ZoneInfo
+# from shutil import rmtree
+# from traceback import print_exc
+# from zoneinfo import ZoneInfo
 
-from energyplus_regressions.builds.base import BuildTree
+# from energyplus_regressions.builds.base import BuildTree
 from energyplus_regressions.structures import TextDifferences, TestEntry, EndErrSummary, CompletedStructure
 
 
-class RegressionManager:
+class ResultsManager:
 
     def __init__(self, mute: bool = False):
         self.root_index_files_no_diff = []
@@ -31,100 +31,100 @@ class RegressionManager:
         if not self.mute:
             print(message)
 
-    def single_file_regressions(self, baseline: Path, modified: Path) -> tuple[TestEntry, bool]:
-
-        idf = baseline.name
-        self.num_idf_inspected += 1
-        this_file_diffs = []
-
-        entry = TestEntry(idf, "")
-        b1 = BuildTree()
-        b1.build_dir = baseline
-        b2 = BuildTree()
-        b2.build_dir = modified
-
-        from energyplus_regressions.runtests import SuiteRunner
-        entry, message = SuiteRunner.process_diffs_for_one_case(
-            entry, b1, b2, "", self.threshold_file, ci_mode=True
-        )  # returns an updated entry
-        self.summary_results[idf] = entry.summary_result
-
-        has_diffs = False
-
-        text_diff_results = {
-            "Audit": entry.aud_diffs,
-            "BND": entry.bnd_diffs,
-            "DELightIn": entry.dl_in_diffs,
-            "DELightOut": entry.dl_out_diffs,
-            "DXF": entry.dxf_diffs,
-            "EIO": entry.eio_diffs,
-            "ERR": entry.err_diffs,
-            "Readvars_Audit": entry.readvars_audit_diffs,
-            "EDD": entry.edd_diffs,
-            "WRL": entry.wrl_diffs,
-            "SLN": entry.sln_diffs,
-            "SCI": entry.sci_diffs,
-            "MAP": entry.map_diffs,
-            "DFS": entry.dfs_diffs,
-            "SCREEN": entry.screen_diffs,
-            "GLHE": entry.glhe_diffs,
-            "MDD": entry.mdd_diffs,
-            "MTD": entry.mtd_diffs,
-            "RDD": entry.rdd_diffs,
-            "SHD": entry.shd_diffs,
-            "PERF_LOG": entry.perf_log_diffs,
-            "IDF": entry.idf_diffs,
-            "StdOut": entry.stdout_diffs,
-            "StdErr": entry.stderr_diffs,
-        }
-        for diff_type, diffs in text_diff_results.items():
-            if diffs is None:
-                continue
-            if diffs.diff_type != TextDifferences.EQUAL:
-                has_diffs = True
-                this_file_diffs.append(diff_type)
-                self.diffs_by_type[diff_type].append(idf)
-                self.diffs_by_idf[idf].append(diff_type)
-
-        numeric_diff_results = {
-            "ESO": entry.eso_diffs,
-            "MTR": entry.mtr_diffs,
-            "SSZ": entry.ssz_diffs,
-            "ZSZ": entry.zsz_diffs,
-            "JSON": entry.json_diffs,
-        }
-        for diff_type, diffs in numeric_diff_results.items():
-            if diffs is None:
-                continue
-            if diffs.diff_type == 'Big Diffs':
-                has_diffs = True
-                this_file_diffs.append(f"{diff_type} Big Diffs")
-                self.diffs_by_type[f"{diff_type} Big Diffs"].append(idf)
-                self.diffs_by_idf[idf].append(f"{diff_type} Big Diffs")
-            elif diffs.diff_type == 'Small Diffs':
-                has_diffs = True
-                this_file_diffs.append(f"{diff_type} Small Diffs")
-                self.diffs_by_type[f"{diff_type} Small Diffs"].append(idf)
-                self.diffs_by_idf[idf].append(f"{diff_type} Small Diffs")
-
-        if entry.table_diffs:
-            if entry.table_diffs.big_diff_count > 0:
-                has_diffs = True
-                this_file_diffs.append("Table Big Diffs")
-                self.diffs_by_type["Table Big Diffs"].append(idf)
-                self.diffs_by_idf[idf].append("Table Big Diffs")
-            elif entry.table_diffs.small_diff_count > 0:
-                has_diffs = True
-                this_file_diffs.append("Table Small Diffs")
-                self.diffs_by_type["Table Small Diffs"].append(idf)
-                self.diffs_by_idf[idf].append("Table Small Diffs")
-            if entry.table_diffs.string_diff_count > 1:  # There's always one...the time stamp
-                has_diffs = True
-                this_file_diffs.append("Table String Diffs")
-                self.diffs_by_type["Table String Diffs"].append(idf)
-                self.diffs_by_idf[idf].append("Table String Diffs")
-
-        return entry, has_diffs
+    # def single_file_regressions(self, baseline: Path, modified: Path) -> tuple[TestEntry, bool]:
+    #
+    #     idf = baseline.name
+    #     self.num_idf_inspected += 1
+    #     this_file_diffs = []
+    #
+    #     entry = TestEntry(idf, "")
+    #     b1 = BuildTree()
+    #     b1.build_dir = baseline
+    #     b2 = BuildTree()
+    #     b2.build_dir = modified
+    #
+    #     from energyplus_regressions.runtests import SuiteRunner
+    #     entry, message = SuiteRunner.process_diffs_for_one_case(
+    #         entry, b1, b2, "", self.threshold_file, ci_mode=True
+    #     )  # returns an updated entry
+    #     self.summary_results[idf] = entry.summary_result
+    #
+    #     has_diffs = False
+    #
+    #     text_diff_results = {
+    #         "Audit": entry.aud_diffs,
+    #         "BND": entry.bnd_diffs,
+    #         "DELightIn": entry.dl_in_diffs,
+    #         "DELightOut": entry.dl_out_diffs,
+    #         "DXF": entry.dxf_diffs,
+    #         "EIO": entry.eio_diffs,
+    #         "ERR": entry.err_diffs,
+    #         "Readvars_Audit": entry.readvars_audit_diffs,
+    #         "EDD": entry.edd_diffs,
+    #         "WRL": entry.wrl_diffs,
+    #         "SLN": entry.sln_diffs,
+    #         "SCI": entry.sci_diffs,
+    #         "MAP": entry.map_diffs,
+    #         "DFS": entry.dfs_diffs,
+    #         "SCREEN": entry.screen_diffs,
+    #         "GLHE": entry.glhe_diffs,
+    #         "MDD": entry.mdd_diffs,
+    #         "MTD": entry.mtd_diffs,
+    #         "RDD": entry.rdd_diffs,
+    #         "SHD": entry.shd_diffs,
+    #         "PERF_LOG": entry.perf_log_diffs,
+    #         "IDF": entry.idf_diffs,
+    #         "StdOut": entry.stdout_diffs,
+    #         "StdErr": entry.stderr_diffs,
+    #     }
+    #     for diff_type, diffs in text_diff_results.items():
+    #         if diffs is None:
+    #             continue
+    #         if diffs.diff_type != TextDifferences.EQUAL:
+    #             has_diffs = True
+    #             this_file_diffs.append(diff_type)
+    #             self.diffs_by_type[diff_type].append(idf)
+    #             self.diffs_by_idf[idf].append(diff_type)
+    #
+    #     numeric_diff_results = {
+    #         "ESO": entry.eso_diffs,
+    #         "MTR": entry.mtr_diffs,
+    #         "SSZ": entry.ssz_diffs,
+    #         "ZSZ": entry.zsz_diffs,
+    #         "JSON": entry.json_diffs,
+    #     }
+    #     for diff_type, diffs in numeric_diff_results.items():
+    #         if diffs is None:
+    #             continue
+    #         if diffs.diff_type == 'Big Diffs':
+    #             has_diffs = True
+    #             this_file_diffs.append(f"{diff_type} Big Diffs")
+    #             self.diffs_by_type[f"{diff_type} Big Diffs"].append(idf)
+    #             self.diffs_by_idf[idf].append(f"{diff_type} Big Diffs")
+    #         elif diffs.diff_type == 'Small Diffs':
+    #             has_diffs = True
+    #             this_file_diffs.append(f"{diff_type} Small Diffs")
+    #             self.diffs_by_type[f"{diff_type} Small Diffs"].append(idf)
+    #             self.diffs_by_idf[idf].append(f"{diff_type} Small Diffs")
+    #
+    #     if entry.table_diffs:
+    #         if entry.table_diffs.big_diff_count > 0:
+    #             has_diffs = True
+    #             this_file_diffs.append("Table Big Diffs")
+    #             self.diffs_by_type["Table Big Diffs"].append(idf)
+    #             self.diffs_by_idf[idf].append("Table Big Diffs")
+    #         elif entry.table_diffs.small_diff_count > 0:
+    #             has_diffs = True
+    #             this_file_diffs.append("Table Small Diffs")
+    #             self.diffs_by_type["Table Small Diffs"].append(idf)
+    #             self.diffs_by_idf[idf].append("Table Small Diffs")
+    #         if entry.table_diffs.string_diff_count > 1:  # There's always one...the time stamp
+    #             has_diffs = True
+    #             this_file_diffs.append("Table String Diffs")
+    #             self.diffs_by_type["Table String Diffs"].append(idf)
+    #             self.diffs_by_idf[idf].append("Table String Diffs")
+    #
+    #     return entry, has_diffs
 
     @staticmethod
     def embed_diff_contents_in_html_wrapper(contents: str) -> str:
@@ -600,150 +600,151 @@ class RegressionManager:
             base_dir, metadata_object, results_object, hit_max_limit
         )
 
-    def check_all_regressions(self, base_testfiles: Path, mod_testfiles: Path, bundle_root: Path) -> bool:
-        any_diffs = False
-        bundle_root.mkdir(exist_ok=True)
-        entries = sorted(base_testfiles.iterdir())
-        backtrace_shown = False
-
-        # temporarily hardcoding metadata stuff
-        baseline_name = "baseline"
-        branch_name = "branch"
-        branch_sha = "abc123de"
-        metadata_object = {
-            "baseline": baseline_name, "branch": branch_name, "branchSha": branch_sha
-        }
-        results_object = {}
-        hit_max_limit = False
-        for entry_num, baseline in enumerate(entries):
-            if not baseline.is_dir():
-                continue
-            if baseline.name == 'CMakeFiles':  # add more ignore dirs here
-                continue
-            modified = mod_testfiles / baseline.name
-            if not modified.exists():
-                continue  # TODO: Should we warn that it is missing?
-            try:
-                entry, diffs = self.single_file_regressions(baseline, modified)
-                if diffs:
-                    self.root_index_files_diffs.append(baseline.name)
-                    any_diffs = True
-                    potential_diff_files = baseline.glob("*.*.*")  # TODO: Could try to get this from regression tool
-                    target_dir_for_this_file_diffs = bundle_root / baseline.name
-                    if potential_diff_files:
-                        if target_dir_for_this_file_diffs.exists():
-                            rmtree(target_dir_for_this_file_diffs)
-                        target_dir_for_this_file_diffs.mkdir()
-                        index_contents_this_file = ""
-                        for potential_diff_file in potential_diff_files:
-                            copy(potential_diff_file, target_dir_for_this_file_diffs)
-                            diff_file_with_html = target_dir_for_this_file_diffs / (potential_diff_file.name + '.html')
-                            if potential_diff_file.name.endswith('.htm'):
-                                # already a html file, just upload the raw contents but renamed as ...htm.html
-                                copy(potential_diff_file, diff_file_with_html)
-                            else:
-                                # it's not an HTML file, wrap it inside an HTML wrapper in a temp file and send it
-                                contents = potential_diff_file.read_text()
-                                wrapped_contents = self.embed_diff_contents_in_html_wrapper(contents)
-                                diff_file_with_html.write_text(wrapped_contents)
-                                if potential_diff_file.name == "eplusout.csv.absdiff.csv" and not hit_max_limit:
-                                    # get data from the csvs, for now just all columns
-                                    base_csv = potential_diff_file.parent / "eplusout.csv"
-                                    base_column_data = self.read_csv_to_columns(base_csv)
-                                    base_timestamps = base_column_data['Date/Time']
-                                    mod_csv = mod_testfiles / baseline.name / "eplusout.csv"
-                                    mod_column_data = self.read_csv_to_columns(mod_csv)
-                                    mod_timestamps = mod_column_data['Date/Time']
-                                    # but then downselect only the columns that math-diff provided in the summary
-                                    abs_diff_columns = self.read_csv_to_columns(potential_diff_file)
-                                    variables_with_diffs = abs_diff_columns.keys()
-                                    # Alright so here's the trick.  If we can tell for sure that these results are
-                                    # just two design days only, split evenly, then we will split it into two
-                                    # plots.  If not, we'll just do one big one
-                                    # at this point, we know the time series match between base and branch
-                                    do_multi_plot = False
-                                    mid_point = 0
-                                    base_times = [base_timestamps]
-                                    mod_times = [mod_timestamps]
-                                    if len(base_timestamps) % 2 == 0:
-                                        mid_point = len(base_timestamps) // 2
-                                        one = base_timestamps[:mid_point]
-                                        one_prefix = one[0][0:6]
-                                        one_all_same_prefix = all([x.startswith(one_prefix) for x in one])
-                                        two = base_timestamps[mid_point:]
-                                        two_prefix = two[0][0:6]
-                                        two_all_same_prefix = all([x.startswith(two_prefix) for x in two])
-                                        if one_all_same_prefix and two_all_same_prefix:
-                                            do_multi_plot = True
-                                            base_times = [one, two]
-                                            mod_times = [one, two]
-                                    results_object[baseline.name] = {
-                                        "timestamps": {"develop": base_times, "branch": mod_times}
-                                    }
-                                    for v in variables_with_diffs:
-                                        if v == 'Date/Time':
-                                            continue
-                                        base_data = [base_column_data[v]]
-                                        mod_data = [mod_column_data[v]]
-                                        if do_multi_plot:
-                                            plot_one_base_data = base_column_data[v][:mid_point]
-                                            plot_one_mod_data = mod_column_data[v][:mid_point]
-                                            plot_two_base_data = base_column_data[v][mid_point:]
-                                            plot_two_mod_data = mod_column_data[v][mid_point:]
-                                            base_data = [plot_one_base_data, plot_two_base_data]
-                                            mod_data = [plot_one_mod_data, plot_two_mod_data]
-                                        # temporarily hardcode the units and quantity
-                                        results_object[baseline.name][v] = {
-                                            "develop": base_data,
-                                            "branch": mod_data
-                                        }
-                                    # check if we are at the max limit to avoid making the page way too heavy to load
-                                    max_size_megabytes = 75  # 75 MB is probably a good cutoff
-                                    max_size_bytes = max_size_megabytes * 1024 * 1024
-                                    estimated_size = len(json.dumps(results_object).encode('utf-8'))
-                                    if estimated_size > max_size_bytes:
-                                        hit_max_limit = True
-                            index_contents_this_file += self.build_row_in_single_test_case_html(
-                                potential_diff_file.name
-                            )
-                        index_file = target_dir_for_this_file_diffs / 'index.html'
-                        index_this_file = self.build_single_test_case_html(index_contents_this_file)
-                        index_file.write_text(index_this_file)
-                else:
-                    self.root_index_files_no_diff.append(baseline.name)
-                so_far = ' Diffs! ' if any_diffs else 'No diffs'
-                if entry_num % 40 == 0:
-                    self.print(f"On file #{entry_num}/{len(entries)} ({baseline.name}), Diff status so far: {so_far}")
-            except Exception as e:
-                any_diffs = True
-                self.print(f"Regression run *failed* trying to process file: {baseline.name}; reason: {e}")
-                if not backtrace_shown:
-                    self.print("Traceback shown once:")
-                    print_exc()
-                    backtrace_shown = True
-                self.root_index_files_failed.append(baseline.name)
-        meta_data = [
-            f"Regression time stamp in UTC: {datetime.now(UTC)}",
-            f"Regression time stamp in Central Time: {datetime.now(ZoneInfo('America/Chicago'))}",
-            f"Number of input files evaluated: {self.num_idf_inspected}",
-        ]
-        bundle_root_index_file_path = bundle_root / 'index.html'
-        bundle_root_index_content = self.bundle_root_index_html(meta_data)
-        bundle_root_index_file_path.write_text(bundle_root_index_content)
-        self.print("")
-        self.print(f"* Files with Diffs *:\n{"\n ".join(self.root_index_files_diffs)}\n")
-        self.print(f"* Diffs by File *:\n{json.dumps(self.diffs_by_idf, indent=2, sort_keys=True)}\n")
-        self.print(f"* Diffs by Type *:\n{json.dumps(self.diffs_by_type, indent=2, sort_keys=True)}\n")
-        if any_diffs:
-            self.generate_markdown_summary(bundle_root)
-            self.generate_regression_plotter(
-                bundle_root, metadata_object, results_object, hit_max_limit
-            )
-            self.generate_regression_plotter(
-                bundle_root.parent, metadata_object, results_object, hit_max_limit
-            )
-            # print("::warning title=Regressions::Diffs Detected")
-        return any_diffs
+    # def check_all_regressions(self, base_testfiles: Path, mod_testfiles: Path, bundle_root: Path) -> bool:
+    #     any_diffs = False
+    #     bundle_root.mkdir(exist_ok=True)
+    #     entries = sorted(base_testfiles.iterdir())
+    #     backtrace_shown = False
+    #
+    #     # temporarily hardcoding metadata stuff
+    #     baseline_name = "baseline"
+    #     branch_name = "branch"
+    #     branch_sha = "abc123de"
+    #     metadata_object = {
+    #         "baseline": baseline_name, "branch": branch_name, "branchSha": branch_sha
+    #     }
+    #     results_object = {}
+    #     hit_max_limit = False
+    #     for entry_num, baseline in enumerate(entries):
+    #         if not baseline.is_dir():
+    #             continue
+    #         if baseline.name == 'CMakeFiles':  # add more ignore dirs here
+    #             continue
+    #         modified = mod_testfiles / baseline.name
+    #         if not modified.exists():
+    #             continue  # TODO: Should we warn that it is missing?
+    #         try:
+    #             entry, diffs = self.single_file_regressions(baseline, modified)
+    #             if diffs:
+    #                 self.root_index_files_diffs.append(baseline.name)
+    #                 any_diffs = True
+    #                 potential_diff_files = baseline.glob("*.*.*")  # TODO: Could try to get this from regression tool
+    #                 target_dir_for_this_file_diffs = bundle_root / baseline.name
+    #                 if potential_diff_files:
+    #                     if target_dir_for_this_file_diffs.exists():
+    #                         rmtree(target_dir_for_this_file_diffs)
+    #                     target_dir_for_this_file_diffs.mkdir()
+    #                     index_contents_this_file = ""
+    #                     for potential_diff_file in potential_diff_files:
+    #                         copy(potential_diff_file, target_dir_for_this_file_diffs)
+    #                         diff_file_with_html = target_dir_for_this_file_diffs /
+    #                                               (potential_diff_file.name + '.html')
+    #                         if potential_diff_file.name.endswith('.htm'):
+    #                             # already a html file, just upload the raw contents but renamed as ...htm.html
+    #                             copy(potential_diff_file, diff_file_with_html)
+    #                         else:
+    #                             # it's not an HTML file, wrap it inside an HTML wrapper in a temp file and send it
+    #                             contents = potential_diff_file.read_text()
+    #                             wrapped_contents = self.embed_diff_contents_in_html_wrapper(contents)
+    #                             diff_file_with_html.write_text(wrapped_contents)
+    #                             if potential_diff_file.name == "eplusout.csv.absdiff.csv" and not hit_max_limit:
+    #                                 # get data from the csvs, for now just all columns
+    #                                 base_csv = potential_diff_file.parent / "eplusout.csv"
+    #                                 base_column_data = self.read_csv_to_columns(base_csv)
+    #                                 base_timestamps = base_column_data['Date/Time']
+    #                                 mod_csv = mod_testfiles / baseline.name / "eplusout.csv"
+    #                                 mod_column_data = self.read_csv_to_columns(mod_csv)
+    #                                 mod_timestamps = mod_column_data['Date/Time']
+    #                                 # but then downselect only the columns that math-diff provided in the summary
+    #                                 abs_diff_columns = self.read_csv_to_columns(potential_diff_file)
+    #                                 variables_with_diffs = abs_diff_columns.keys()
+    #                                 # Alright so here's the trick.  If we can tell for sure that these results are
+    #                                 # just two design days only, split evenly, then we will split it into two
+    #                                 # plots.  If not, we'll just do one big one
+    #                                 # at this point, we know the time series match between base and branch
+    #                                 do_multi_plot = False
+    #                                 mid_point = 0
+    #                                 base_times = [base_timestamps]
+    #                                 mod_times = [mod_timestamps]
+    #                                 if len(base_timestamps) % 2 == 0:
+    #                                     mid_point = len(base_timestamps) // 2
+    #                                     one = base_timestamps[:mid_point]
+    #                                     one_prefix = one[0][0:6]
+    #                                     one_all_same_prefix = all([x.startswith(one_prefix) for x in one])
+    #                                     two = base_timestamps[mid_point:]
+    #                                     two_prefix = two[0][0:6]
+    #                                     two_all_same_prefix = all([x.startswith(two_prefix) for x in two])
+    #                                     if one_all_same_prefix and two_all_same_prefix:
+    #                                         do_multi_plot = True
+    #                                         base_times = [one, two]
+    #                                         mod_times = [one, two]
+    #                                 results_object[baseline.name] = {
+    #                                     "timestamps": {"develop": base_times, "branch": mod_times}
+    #                                 }
+    #                                 for v in variables_with_diffs:
+    #                                     if v == 'Date/Time':
+    #                                         continue
+    #                                     base_data = [base_column_data[v]]
+    #                                     mod_data = [mod_column_data[v]]
+    #                                     if do_multi_plot:
+    #                                         plot_one_base_data = base_column_data[v][:mid_point]
+    #                                         plot_one_mod_data = mod_column_data[v][:mid_point]
+    #                                         plot_two_base_data = base_column_data[v][mid_point:]
+    #                                         plot_two_mod_data = mod_column_data[v][mid_point:]
+    #                                         base_data = [plot_one_base_data, plot_two_base_data]
+    #                                         mod_data = [plot_one_mod_data, plot_two_mod_data]
+    #                                     # temporarily hardcode the units and quantity
+    #                                     results_object[baseline.name][v] = {
+    #                                         "develop": base_data,
+    #                                         "branch": mod_data
+    #                                     }
+    #                                 # check if we are at the max limit to avoid making the page way too heavy to load
+    #                                 max_size_megabytes = 75  # 75 MB is probably a good cutoff
+    #                                 max_size_bytes = max_size_megabytes * 1024 * 1024
+    #                                 estimated_size = len(json.dumps(results_object).encode('utf-8'))
+    #                                 if estimated_size > max_size_bytes:
+    #                                     hit_max_limit = True
+    #                         index_contents_this_file += self.build_row_in_single_test_case_html(
+    #                             potential_diff_file.name
+    #                         )
+    #                     index_file = target_dir_for_this_file_diffs / 'index.html'
+    #                     index_this_file = self.build_single_test_case_html(index_contents_this_file)
+    #                     index_file.write_text(index_this_file)
+    #             else:
+    #                 self.root_index_files_no_diff.append(baseline.name)
+    #             so_far = ' Diffs! ' if any_diffs else 'No diffs'
+    #             if entry_num % 40 == 0:
+    #                 self.print(f"On file #{entry_num}/{len(entries)} ({baseline.name}), Diff status so far: {so_far}")
+    #         except Exception as e:
+    #             any_diffs = True
+    #             self.print(f"Regression run *failed* trying to process file: {baseline.name}; reason: {e}")
+    #             if not backtrace_shown:
+    #                 self.print("Traceback shown once:")
+    #                 print_exc()
+    #                 backtrace_shown = True
+    #             self.root_index_files_failed.append(baseline.name)
+    #     meta_data = [
+    #         f"Regression time stamp in UTC: {datetime.now(UTC)}",
+    #         f"Regression time stamp in Central Time: {datetime.now(ZoneInfo('America/Chicago'))}",
+    #         f"Number of input files evaluated: {self.num_idf_inspected}",
+    #     ]
+    #     bundle_root_index_file_path = bundle_root / 'index.html'
+    #     bundle_root_index_content = self.bundle_root_index_html(meta_data)
+    #     bundle_root_index_file_path.write_text(bundle_root_index_content)
+    #     self.print("")
+    #     self.print(f"* Files with Diffs *:\n{"\n ".join(self.root_index_files_diffs)}\n")
+    #     self.print(f"* Diffs by File *:\n{json.dumps(self.diffs_by_idf, indent=2, sort_keys=True)}\n")
+    #     self.print(f"* Diffs by Type *:\n{json.dumps(self.diffs_by_type, indent=2, sort_keys=True)}\n")
+    #     if any_diffs:
+    #         self.generate_markdown_summary(bundle_root)
+    #         self.generate_regression_plotter(
+    #             bundle_root, metadata_object, results_object, hit_max_limit
+    #         )
+    #         self.generate_regression_plotter(
+    #             bundle_root.parent, metadata_object, results_object, hit_max_limit
+    #         )
+    #         # print("::warning title=Regressions::Diffs Detected")
+    #     return any_diffs
 
 
 if __name__ == "__main__":  # pragma: no cover - testing function, not the __main__ entry point
@@ -754,6 +755,6 @@ if __name__ == "__main__":  # pragma: no cover - testing function, not the __mai
     arg_base_dir = Path(sys.argv[1])
     arg_mod_dir = Path(sys.argv[2])
     arg_regression_dir = Path(sys.argv[3])
-    rm = RegressionManager()
-    response = rm.check_all_regressions(arg_base_dir, arg_mod_dir, arg_regression_dir)
-    sys.exit(1 if response else 0)
+    rm = ResultsManager()
+    # response = rm.check_all_regressions(arg_base_dir, arg_mod_dir, arg_regression_dir)
+    # sys.exit(1 if response else 0)

@@ -29,7 +29,7 @@ from energyplus_regressions.structures import (
     ForceOutputSQLUnitConversion,
     TestEntry
 )
-from energyplus_regressions.results import RegressionManager
+from energyplus_regressions.results import ResultsManager
 
 if getattr(sys, 'frozen', False):  # pragma: no cover -- not covering frozen apps in unit tests
     frozen = True
@@ -175,7 +175,7 @@ class SuiteRunner:
         self.my_print(" --build-2--> %s" % self.build_tree_b.build_dir)
         self.my_print("Test suite complete")
 
-        RegressionManager(mute=True).build_summary_content(self.completed_structure)
+        ResultsManager(mute=True).build_summary_content(self.completed_structure)
         self.my_all_done(self.completed_structure)
         return
 
