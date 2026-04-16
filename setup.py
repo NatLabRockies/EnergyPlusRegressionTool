@@ -21,9 +21,9 @@ setup(
     package_data={
         'energyplus_regressions': ['diffs/math_diff.config', 'icons/icon.png', 'icons/icon.ico', 'icons/icon.icns']
     },
-    url='https://github.com/NREL/EnergyPlusRegressionTool',
+    url='https://github.com/NatLabRockies/EnergyPlusRegressionTool',
     license='ModifiedBSD',
-    author='Edwin Lee, for NREL, for United States Department of Energy',
+    author='Edwin Lee, for NLR, for United States Department of Energy',
     description='A Python 3 library for evaluating regressions between EnergyPlus builds.',
     long_description=long_description,
     long_description_content_type='text/markdown',
