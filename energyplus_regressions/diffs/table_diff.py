@@ -84,12 +84,19 @@ td.equal {
 td.table_size_error {
     background-color: #FCFF97;
 }
+td.stringdiff {
+    background-color: #F6D8AE;
+}
 .big {
     background-color: #FF969D;
 }
 
 .small {
     background-color: #FFBE84;
+}
+
+.stringdiff {
+    background-color: #F6D8AE;
 }
 
 """
@@ -112,8 +119,8 @@ def thresh_abs_rel_diff(abs_thresh: float, rel_thresh: float, x: str, y: str) ->
             diff = 'small'
         return abs_diff, rel_diff, diff
     except ValueError:
-        # if we couldn't get a float out of it, we are doing string comparison, check case-insensitively before leaving
-        if x.lower().strip() == y.lower().strip():
+        # if we couldn't get a float out of it, do a string comparison after trimming edge whitespace
+        if x.strip() == y.strip():
             return 0, 0, 'equal'
         else:
             return f'{x} vs {y}', f'{x} vs {y}', 'stringdiff'
@@ -149,6 +156,14 @@ def normalize_row_match_value(value):
     """Normalize a cell value for row matching without changing actual diff output."""
     text = str(value).replace('\xa0', ' ')
     return ' '.join(text.split()).casefold()
+
+
+def should_ignore_table_diff_field(column_heading, row_label=None):
+    if column_heading == 'Version ID':
+        return True
+    if row_label and str(row_label).strip() == 'Program Version and Build':
+        return True
+    return False
 
 
 def row_cells_for_match(trow):
@@ -267,7 +282,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
             if h not in hdict:
                 tdtag = Tag(soup, name='td', attrs=[("class", "big")])
                 tdtag.append('ColumnHeadingDifference')
-            elif h == 'DummyPlaceholder' or h == 'Subcategory':
+            elif h == 'Subcategory':
                 # Some tables such as the Source Energy End Use Components
                 # have a blank row full of `<td>&nbsp;</td>` which won't be
                 # decoded nicely
@@ -278,6 +293,23 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
                 except Exception:  # pragma: no cover
                     val = val.encode('ascii', 'ignore').decode('ascii')
                     tdtag.append(str(val))
+            elif h == 'DummyPlaceholder':
+                val = hdict[h][i]
+                if isinstance(val, tuple) and len(val) == 2:
+                    diff, which = val
+                    tdtag = Tag(soup, name='td', attrs=[('class', which)])
+                    try:
+                        tdtag.append(str(diff))
+                    except Exception:  # pragma: no cover
+                        diff = diff.encode('ascii', 'ignore').decode('ascii')
+                        tdtag.append(str(diff))
+                else:
+                    tdtag = Tag(soup, name='td')
+                    try:
+                        tdtag.append(str(val))
+                    except Exception:  # pragma: no cover
+                        val = val.encode('ascii', 'ignore').decode('ascii')
+                        tdtag.append(str(val))
             else:
                 (diff, which) = hdict[h][i]
                 tdtag = Tag(soup, name='td', attrs=[('class', which)])
@@ -531,6 +563,7 @@ def table_diff(
         # but for all other tables, we can use the first table as a baseline to carefully match up the rows
         else:
             hdict2, horder2 = table2hdict_horder(table2, table1)
+        compare_row_label_fields = not any(k in uheading1 for k in row_order_dependent_table_keys)
 
         # honestly, if the column headings have changed, this should be an indicator to all reviewers that this needs
         # up close investigation.  As such, we are going to trigger the following things:
@@ -554,7 +587,18 @@ def table_diff(
 
         for h in horder1:
             if h == 'DummyPlaceholder':
-                diff_dict[h] = hdict1[h]
+                if h not in horder2 or not compare_row_label_fields:
+                    diff_dict[h] = hdict1[h]
+                else:
+                    diff_dict[h] = []
+                    for x, y in zip(hdict1[h], hdict2[h]):
+                        diff_result = thresh_abs_rel_diff(0, 0, x, y)
+                        if diff_result[2] == 'stringdiff':
+                            diff_dict[h].append((diff_result[0], diff_result[2]))
+                            table_string_diff += 1
+                            count_of_string_diff += 1
+                        else:
+                            diff_dict[h].append(x)
             else:
                 if h not in horder2:
                     diff_dict[h] = [[0, 0, 'big']] * (len(table1('tr')) - 1)
@@ -562,13 +606,18 @@ def table_diff(
                     (abs_thresh, rel_thresh) = thresh_dict.lookup(h)
                     h_thresh_dict[h] = (abs_thresh, rel_thresh)
                     diff_dict[h] = []
-                    for x, y in zip(hdict1[h], hdict2[h]):
-                        diff_dict[h].append(thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y))
+                    row_labels = hdict1.get('DummyPlaceholder', [])
+                    for row_index, (x, y) in enumerate(zip(hdict1[h], hdict2[h])):
+                        row_label = row_labels[row_index] if row_index < len(row_labels) else None
+                        if should_ignore_table_diff_field(h, row_label):
+                            diff_dict[h].append((0, 0, 'equal'))
+                        else:
+                            diff_dict[h].append(thresh_abs_rel_diff(abs_thresh, rel_thresh, x, y))
 
                 # Statistics local to this table
                 for diff_result in diff_dict[h]:
                     diff_type = diff_result[2]
-                    if h == 'Version ID':
+                    if should_ignore_table_diff_field(h):
                         table_equal += 1
                         count_of_equal += 1
                     elif diff_type == 'small':
