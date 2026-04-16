@@ -147,7 +147,7 @@ class TableDifferences:
         self.big_diff_count = args_from_table_diff[2]
         self.small_diff_count = args_from_table_diff[3]
         self.equal_count = args_from_table_diff[4]
-        self.string_diff_count = args_from_table_diff[5]  # There's always one...the time stamp
+        self.string_diff_count = args_from_table_diff[5]
         self.size_err_count = args_from_table_diff[6]
         self.not_in_1_count = args_from_table_diff[7]
         self.not_in_2_count = args_from_table_diff[8]
@@ -159,7 +159,7 @@ class TableDifferences:
         response['big_diff_count'] = self.big_diff_count
         response['small_diff_count'] = self.small_diff_count
         response['equal_count'] = self.equal_count
-        response['string_diff_count'] = self.string_diff_count  # There's always one...the time stamp
+        response['string_diff_count'] = self.string_diff_count
         response['size_err_count'] = self.size_err_count
         response['not_in_1_count'] = self.not_in_1_count
         response['not_in_2_count'] = self.not_in_2_count
@@ -464,7 +464,7 @@ class CompletedStructure:
                 self.big_table_diffs.add_to_data(this_entry.basename, "table")
             elif this_entry.table_diffs.small_diff_count > 0:
                 self.small_table_diffs.add_to_data(this_entry.basename, "table")
-            if this_entry.table_diffs.string_diff_count > 1:  # There's always one...the time stamp
+            if this_entry.table_diffs.string_diff_count > 0:
                 self.big_table_diffs.add_to_data(this_entry.basename, "table")
 
         # check the textual diffs

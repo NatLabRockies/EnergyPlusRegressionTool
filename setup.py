@@ -1,4 +1,3 @@
-import codecs
 import os
 from platform import system
 from setuptools import setup
@@ -6,11 +5,11 @@ from setuptools import setup
 from energyplus_regressions import NAME, VERSION
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
-with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_file:
+with open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_file:
     long_description = i_file.read()
 
 
-install_requires = ['PyPubSub', 'beautifulsoup4==4.12.3', 'PLAN-Tools>=0.5']
+install_requires = ['PyPubSub', 'beautifulsoup4==4.14.3', 'PLAN-Tools>=0.7']
 if system() == 'Windows':
     install_requires.append('pypiwin32')
 
@@ -22,9 +21,9 @@ setup(
     package_data={
         'energyplus_regressions': ['diffs/math_diff.config', 'icons/icon.png', 'icons/icon.ico', 'icons/icon.icns']
     },
-    url='https://github.com/NREL/EnergyPlusRegressionTool',
+    url='https://github.com/NatLabRockies/EnergyPlusRegressionTool',
     license='ModifiedBSD',
-    author='Edwin Lee, for NREL, for United States Department of Energy',
+    author='Edwin Lee, for NLR, for United States Department of Energy',
     description='A Python 3 library for evaluating regressions between EnergyPlus builds.',
     long_description=long_description,
     long_description_content_type='text/markdown',

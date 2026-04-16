@@ -154,6 +154,33 @@ class TestCICompareScriptFunctions(unittest.TestCase):
                 test_mode=True
             )
             self.assertIn('Table small diffs', out.getvalue().strip())
+
+    def test_main_function_reports_single_table_string_diff(self):
+        end_string = 'EnergyPlus Completed Successfully-- 0 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  3.06sec'
+        self._write_files_to_both_folders('eplusout.end', end_string, end_string)
+        shutil.copy(
+            os.path.join(self.tbl_resource_dir, 'eplustbl_has_string_diff_base.htm'),
+            os.path.join(self.temp_base_dir, 'eplustbl.htm')
+        )
+        shutil.copy(
+            os.path.join(self.tbl_resource_dir, 'eplustbl_has_string_diff_mod.htm'),
+            os.path.join(self.temp_mod_dir, 'eplustbl.htm')
+        )
+        with captured_output() as (out, err):
+            main_function(
+                file_name='HVACTemplate-5ZoneFanCoil',
+                base_dir=self.temp_base_dir,
+                mod_dir=self.temp_mod_dir,
+                base_sha='base123',
+                mod_sha='mod456',
+                _make_public=True,
+                device_id='some_device_id',
+                test_mode=True
+            )
+            output = out.getvalue().strip()
+            self.assertIn('Table string diffs', output)
+            self.assertNotIn('Table big diffs', output)
+            self.assertNotIn('Table small diffs', output)
         # now test one where every single file has big diffs
         shutil.copy(
             os.path.join(self.csv_resource_dir, 'eplusout.csv'),

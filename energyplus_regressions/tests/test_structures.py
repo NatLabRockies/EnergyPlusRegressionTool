@@ -258,3 +258,21 @@ class TestCompletedStructure(unittest.TestCase):
         self.assertIn('runs', obj)
         self.assertIn('diffs', obj)
         self.assertIn('results_by_file', obj)
+
+    def test_to_json_summary_reports_single_table_string_diff_as_big_table(self):
+        c = CompletedStructure(
+            Path('/a/source/dir'), Path('/a/build/dir'),
+            Path('/b/source/dir'), Path('/b/build/dir'),
+            Path('/r/dir1'), Path('/r/dir2'),
+            datetime.now()
+        )
+        t = TestEntry('filename', 'weather')
+        t.add_summary_result(EndErrSummary(EndErrSummary.STATUS_SUCCESS, 1, EndErrSummary.STATUS_SUCCESS, 1))
+        t.add_table_differences(TableDifferences(['', 1, 0, 0, 2, 1, 0, 0, 0]))
+        c.add_test_entry(t)
+
+        obj = c.to_json_summary()
+
+        self.assertEqual(['filename'], obj['diffs']['big_table'])
+        self.assertEqual([], obj['diffs']['small_table'])
+        self.assertEqual(1, obj['results_by_file'][0]['table_diffs']['string_diff_count'])

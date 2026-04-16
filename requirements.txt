@@ -1,6 +1,6 @@
 # the core dependencies actually needed
 pypubsub
-beautifulsoup4==4.12.3
+beautifulsoup4==4.14.3
 
 # for running tests
 coverage
@@ -19,4 +19,4 @@ docutils   # pinning this because it breaks at 0.18
 wheel
 
 # for polishing up the Pip install
-PLAN-Tools>=0.5
+PLAN-Tools>=0.7

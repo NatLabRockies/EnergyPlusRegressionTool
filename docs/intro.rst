@@ -13,12 +13,12 @@ that are included in EnergyPlus development.
 History/Credits
 ---------------
 
-This program was based on a test suite used at the National Renewable
-Energy Laboratory (NREL) that was developed by Kyle Benne and Jason
-Turner, and consisted of both ruby and python scripts, including a job
-manager to allow multiple threads to run concurrently. Although this
-script was at the heart of the inspiration for creating this current
-tool, very little of the original code exists.
+This program was based on a test suite used at the National Laboratory
+of the Rockies (NLR) (formerly NREL) that was developed by Kyle Benne
+and JasonTurner, and consisted of both ruby and python scripts,
+including a jobmanager to allow multiple threads to run concurrently.
+Although this script was at the heart of the inspiration for creating
+this current tool, very little of the original code exists.
 
 The mathematical comparisons performed on the EnergyPlus output files
 (MathDiff and TableDiff) were developed originally by Santosh Philip and
@@ -40,4 +40,4 @@ Known issues
 ------------
 
 Known issues for this tool are found on the
-`issue list <https://github.com/NREL/EnergyPlusRegressionTool/issues>`_.
+`issue list <https://github.com/NatLabRockies/EnergyPlusRegressionTool/issues>`_.
