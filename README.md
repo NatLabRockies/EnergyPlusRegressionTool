@@ -4,7 +4,7 @@
 [![Run Tests](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/test.yml/badge.svg)](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/test.yml)
 [![PyPIRelease](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/release.yml/badge.svg)](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/release.yml)
 [![Flake8](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/flake8.yml/badge.svg)](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/flake8.yml)
-[![Coverage Status](https://coveralls.io/repos/github/NatLabRockies/EnergyPlusRegressionTool/badge.svg?branch=master)](https://coveralls.io/github/NatLabRockies/EnergyPlusRegressionTool?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/NatLabRockies/EnergyPlusRegressionTool/badge.svg)](https://coveralls.io/github/NatLabRockies/EnergyPlusRegressionTool)
 
 ## Overview
 
