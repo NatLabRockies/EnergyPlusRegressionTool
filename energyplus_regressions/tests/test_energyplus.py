@@ -13,17 +13,28 @@ class TestEnergyPlus(unittest.TestCase):
     def setUp(self):
         cur_dir_path = Path(__file__).resolve().parent
         self.resource_dir = cur_dir_path / 'resources'
+        dist_dir = self.resource_dir / 'dist'
+        use_windows_binaries = sys.platform.startswith('win')
         self.build_tree = BuildTree()
-        self.build_tree.energyplus = self.resource_dir / 'dummy.energyplus.py'
-        self.build_tree.basement = self.resource_dir / 'dummy.basement.py'
         self.build_tree.idd_path = self.resource_dir / 'dummy.Energy+.idd'
-        self.build_tree.slab = self.resource_dir / 'dummy.slab.py'
         self.build_tree.basementidd = self.resource_dir / 'dummy.basement.idd'
         self.build_tree.slabidd = self.resource_dir / 'dummy.slab.py'
-        self.build_tree.expandobjects = self.resource_dir / 'dummy.expandobjects.py'
-        self.build_tree.epmacro = self.resource_dir / 'dummy.epmacro.py'
-        self.build_tree.readvars = self.resource_dir / 'dummy.readvars.py'
-        self.build_tree.parametric = self.resource_dir / 'dummy.parametric.py'
+        # GH Actions on Windows can execute the packaged dummy exes reliably, while direct shell
+        # execution of the .py helpers is flaky for the macro/parametric preprocessors.
+        self.build_tree.energyplus = dist_dir / 'energyplus.exe' if use_windows_binaries \
+            else self.resource_dir / 'dummy.energyplus.py'
+        self.build_tree.basement = dist_dir / 'basement.exe' if use_windows_binaries \
+            else self.resource_dir / 'dummy.basement.py'
+        self.build_tree.slab = dist_dir / 'slab.exe' if use_windows_binaries \
+            else self.resource_dir / 'dummy.slab.py'
+        self.build_tree.expandobjects = dist_dir / 'expandobjects.exe' if use_windows_binaries \
+            else self.resource_dir / 'dummy.expandobjects.py'
+        self.build_tree.epmacro = dist_dir / 'epmacro.exe' if use_windows_binaries \
+            else self.resource_dir / 'dummy.epmacro.py'
+        self.build_tree.readvars = dist_dir / 'readvars.exe' if use_windows_binaries \
+            else self.resource_dir / 'dummy.readvars.py'
+        self.build_tree.parametric = dist_dir / 'parametric.exe' if use_windows_binaries \
+            else self.resource_dir / 'dummy.parametric.py'
         self.build_tree.build_dir = Path('/dummy/')
         self.run_dir = Path(tempfile.mkdtemp())
 
@@ -118,7 +129,6 @@ class TestEnergyPlus(unittest.TestCase):
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
-    @unittest.skipIf(sys.platform.startswith('win'), "GH Actions is having trouble executing dummy.epmacro")
     def test_eplus_passed_macro(self):
         with (self.run_dir / 'in.imf').open('w') as f:
             f.write('##fileprefix line\n')
@@ -138,7 +148,6 @@ class TestEnergyPlus(unittest.TestCase):
         self.assertTrue(return_val[2])
         self.assertFalse(return_val[3])
 
-    @unittest.skipIf(sys.platform.startswith('win'), "GH Actions is having trouble executing dummy.parametric")
     def test_eplus_passed_parametric(self):
         with (self.run_dir / 'in.idf').open('w') as f:
             f.write('PARAMETRIC:')
