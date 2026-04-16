@@ -3,7 +3,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from energyplus_regressions.diffs.table_diff import table_diff
+from bs4 import BeautifulSoup
+
+from energyplus_regressions.diffs.table_diff import (
+    hdict2soup,
+    match_search_rows_to_base_rows,
+    reorder_rows_to_match,
+    table_diff,
+    thresh_abs_rel_diff,
+)
 from energyplus_regressions.diffs.thresh_dict import ThreshDict
 
 
@@ -14,6 +22,51 @@ class TestTableDiff(unittest.TestCase):
         self.diff_files_dir = os.path.join(self.cur_dir_path, 'tbl_resources')
         self.temp_output_dir = tempfile.mkdtemp()
         self.thresh_dict = ThreshDict(os.path.join(self.diff_files_dir, 'test_table_diff.config'))
+
+    @staticmethod
+    def _rows_from_table(html_table):
+        soup = BeautifulSoup(html_table, 'html.parser')
+        return soup('tr')[1:]
+
+    def test_thresh_abs_rel_diff_string_equal_after_trim(self):
+        self.assertEqual((0, 0, 'equal'), thresh_abs_rel_diff(0.1, 0.1, '  Value  ', 'Value'))
+
+    def test_reorder_rows_to_match_returns_original_rows_on_missing_key(self):
+        search_rows = ['row-a']
+        reordered = reorder_rows_to_match([['a'], ['missing']], [['a']], search_rows)
+        self.assertIs(reordered, search_rows)
+
+    def test_match_search_rows_to_base_rows_skips_non_unique_short_prefix(self):
+        base_rows = self._rows_from_table("""
+            <table>
+              <tr><td>Group</td><td>Item</td><td>Value</td></tr>
+              <tr><td>Equipment</td><td>Coil A</td><td>10</td></tr>
+              <tr><td>Equipment</td><td>Coil B</td><td>20</td></tr>
+            </table>
+        """)
+        search_rows = self._rows_from_table("""
+            <table>
+              <tr><td>Group</td><td>Item</td><td>Value</td></tr>
+              <tr><td>Equipment</td><td>Coil B</td><td>21</td></tr>
+              <tr><td>Equipment</td><td>Coil A</td><td>10</td></tr>
+            </table>
+        """)
+        reordered = match_search_rows_to_base_rows(base_rows, search_rows)
+        self.assertEqual('Coil A', reordered[0]('td')[1].get_text(strip=True))
+        self.assertEqual('Coil B', reordered[1]('td')[1].get_text(strip=True))
+
+    def test_hdict2soup_renders_subcategory_as_plain_text(self):
+        soup = BeautifulSoup('<html><body></body></html>', 'html.parser')
+        hdict2soup(
+            soup,
+            'Heading',
+            1,
+            {'Subcategory': ['Display Text'], 'Value': [(0, 'equal')]},
+            {'Value': (0.001, 0.005)},
+            ['Subcategory', 'Value'],
+        )
+        rendered = soup.prettify()
+        self.assertIn('Display Text', rendered)
 
     def test_identical_files(self):
         response = table_diff(
