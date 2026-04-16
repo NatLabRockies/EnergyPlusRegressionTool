@@ -1,8 +1,17 @@
 import os
 import tempfile
 import unittest
+from pathlib import Path
 
-from energyplus_regressions.diffs.table_diff import table_diff
+from bs4 import BeautifulSoup
+
+from energyplus_regressions.diffs.table_diff import (
+    hdict2soup,
+    match_search_rows_to_base_rows,
+    reorder_rows_to_match,
+    table_diff,
+    thresh_abs_rel_diff,
+)
 from energyplus_regressions.diffs.thresh_dict import ThreshDict
 
 
@@ -13,6 +22,51 @@ class TestTableDiff(unittest.TestCase):
         self.diff_files_dir = os.path.join(self.cur_dir_path, 'tbl_resources')
         self.temp_output_dir = tempfile.mkdtemp()
         self.thresh_dict = ThreshDict(os.path.join(self.diff_files_dir, 'test_table_diff.config'))
+
+    @staticmethod
+    def _rows_from_table(html_table):
+        soup = BeautifulSoup(html_table, 'html.parser')
+        return soup('tr')[1:]
+
+    def test_thresh_abs_rel_diff_string_equal_after_trim(self):
+        self.assertEqual((0, 0, 'equal'), thresh_abs_rel_diff(0.1, 0.1, '  Value  ', 'Value'))
+
+    def test_reorder_rows_to_match_returns_original_rows_on_missing_key(self):
+        search_rows = ['row-a']
+        reordered = reorder_rows_to_match([['a'], ['missing']], [['a']], search_rows)
+        self.assertIs(reordered, search_rows)
+
+    def test_match_search_rows_to_base_rows_skips_non_unique_short_prefix(self):
+        base_rows = self._rows_from_table("""
+            <table>
+              <tr><td>Group</td><td>Item</td><td>Value</td></tr>
+              <tr><td>Equipment</td><td>Coil A</td><td>10</td></tr>
+              <tr><td>Equipment</td><td>Coil B</td><td>20</td></tr>
+            </table>
+        """)
+        search_rows = self._rows_from_table("""
+            <table>
+              <tr><td>Group</td><td>Item</td><td>Value</td></tr>
+              <tr><td>Equipment</td><td>Coil B</td><td>21</td></tr>
+              <tr><td>Equipment</td><td>Coil A</td><td>10</td></tr>
+            </table>
+        """)
+        reordered = match_search_rows_to_base_rows(base_rows, search_rows)
+        self.assertEqual('Coil A', reordered[0]('td')[1].get_text(strip=True))
+        self.assertEqual('Coil B', reordered[1]('td')[1].get_text(strip=True))
+
+    def test_hdict2soup_renders_subcategory_as_plain_text(self):
+        soup = BeautifulSoup('<html><body></body></html>', 'html.parser')
+        hdict2soup(
+            soup,
+            'Heading',
+            1,
+            {'Subcategory': ['Display Text'], 'Value': [(0, 'equal')]},
+            {'Value': (0.001, 0.005)},
+            ['Subcategory', 'Value'],
+        )
+        rendered = soup.prettify()
+        self.assertIn('Display Text', rendered)
 
     def test_identical_files(self):
         response = table_diff(
@@ -235,11 +289,12 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
 
     def test_string_diff(self):
+        abs_diff = os.path.join(self.temp_output_dir, 'abs_diff.htm')
         response = table_diff(
             self.thresh_dict,
             os.path.join(self.diff_files_dir, 'eplustbl_has_string_diff_base.htm'),
             os.path.join(self.diff_files_dir, 'eplustbl_has_string_diff_mod.htm'),
-            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            abs_diff,
             os.path.join(self.temp_output_dir, 'rel_diff.htm'),
             os.path.join(self.temp_output_dir, 'math_diff.log'),
             os.path.join(self.temp_output_dir, 'summary.htm'),
@@ -253,14 +308,38 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
+        self.assertIn('HELLO vs        WORLD', Path(abs_diff).read_text())
+
+    def test_row_label_string_diff(self):
+        abs_diff = os.path.join(self.temp_output_dir, 'abs_diff.htm')
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_row_label_string_diff_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_row_label_string_diff_mod.htm'),
+            abs_diff,
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(1, response[1])  # count_of_tables
+        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(2, response[4])  # equals
+        self.assertEqual(1, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+        self.assertIn('Alpha vs Alpha Renamed', Path(abs_diff).read_text())
 
     def test_string_diff_case_change_only(self):
-        # should be no diffs for case-insensitive comparison
+        # case-only text changes should still surface as string diffs
+        abs_diff = os.path.join(self.temp_output_dir, 'abs_diff.htm')
         response = table_diff(
             self.thresh_dict,
             os.path.join(self.diff_files_dir, 'eplustbl_has_string_diff_base.htm'),
             os.path.join(self.diff_files_dir, 'eplustbl_has_string_diff_case_only.htm'),
-            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            abs_diff,
             os.path.join(self.temp_output_dir, 'rel_diff.htm'),
             os.path.join(self.temp_output_dir, 'math_diff.log'),
             os.path.join(self.temp_output_dir, 'summary.htm'),
@@ -269,11 +348,12 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(3, response[1])  # count_of_tables
         self.assertEqual(0, response[2])  # big diffs
         self.assertEqual(0, response[3])  # small diffs
-        self.assertEqual(17, response[4])  # equals
-        self.assertEqual(0, response[5])  # string diffs
+        self.assertEqual(16, response[4])  # equals
+        self.assertEqual(1, response[5])  # string diffs
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
+        self.assertIn('HELLO vs        hello', Path(abs_diff).read_text())
 
     def test_malformed_table_heading_in_file_1(self):
         response = table_diff(
@@ -352,8 +432,8 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(155, response[1])  # count_of_tables
         self.assertEqual(334, response[2])  # big diffs
         self.assertEqual(67, response[3])  # small diffs
-        self.assertEqual(3756, response[4])  # equals
-        self.assertEqual(21, response[5])  # string diffs
+        self.assertEqual(3757, response[4])  # equals
+        self.assertEqual(20, response[5])  # string diffs
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
@@ -373,8 +453,8 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(155, response[1])  # count_of_tables
         self.assertEqual(334, response[2])  # big diffs
         self.assertEqual(67, response[3])  # small diffs
-        self.assertEqual(3756, response[4])  # equals
-        self.assertEqual(21, response[5])  # string diffs
+        self.assertEqual(3757, response[4])  # equals
+        self.assertEqual(20, response[5])  # string diffs
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
@@ -512,13 +592,34 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
 
+    def test_ignore_program_version_and_build_diff(self):
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_program_versiondiff_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_program_versiondiff_mod.htm'),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(1, response[1])  # count_of_tables
+        self.assertEqual(0, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(2, response[4])  # equals
+        self.assertEqual(0, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
     def test_catching_object_name_diff(self):
         # The two files have differences in the string diffs, why aren't they handled?
+        abs_diff = os.path.join(self.temp_output_dir, 'abs_diff.htm')
         response = table_diff(
             self.thresh_dict,
             os.path.join(self.diff_files_dir, 'eplustbl_objname_base.htm'),
             os.path.join(self.diff_files_dir, 'eplustbl_objname_mod.htm'),
-            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            abs_diff,
             os.path.join(self.temp_output_dir, 'rel_diff.htm'),
             os.path.join(self.temp_output_dir, 'math_diff.log'),
             os.path.join(self.temp_output_dir, 'summary.htm'),
@@ -532,6 +633,7 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
+        self.assertIn('Unknown vs SPACE1-1 ATU', Path(abs_diff).read_text())
 
     def test_odd_column_heading_mismatch_diff(self):
         # The eplustbl output has two tables with duplicate names but different column header data
@@ -576,6 +678,34 @@ class TestTableDiff(unittest.TestCase):
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
+
+    def test_reordering_with_case_only_key_column_changes_and_real_value_diff(self):
+        # Coil sizing tables can reorder rows while also changing the presentation case of an
+        # identifier column. We still want to align rows by their stable leading key while
+        # reporting both the case-only string diffs and the real numeric diff.
+        abs_diff = os.path.join(self.temp_output_dir, 'abs_diff.htm')
+        response = table_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplustbl_row_reorder_case_change_base.htm'),
+            os.path.join(self.diff_files_dir, 'eplustbl_row_reorder_case_change_mod.htm'),
+            abs_diff,
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(1, response[1])  # count_of_tables
+        self.assertEqual(1, response[2])  # big diffs
+        self.assertEqual(0, response[3])  # small diffs
+        self.assertEqual(3, response[4])  # equals
+        self.assertEqual(4, response[5])  # string diffs
+        self.assertEqual(0, response[6])  # size errors
+        self.assertEqual(0, response[7])  # in file 2 but not in file 1
+        self.assertEqual(0, response[8])  # in file 1 but not in file 2
+        self.assertIn(
+            'COIL:COOLING:DX:VARIABLEREFRIGERANTFLOW vs Coil:Cooling:DX:VariableRefrigerantFlow',
+            Path(abs_diff).read_text()
+        )
 
     # it seems like this is something that table_diff just cannot handle.  The duplicate empty column heading is causing
     # major problems.  I'm going to skip this test for now, but leave the two table diff resource files in place
