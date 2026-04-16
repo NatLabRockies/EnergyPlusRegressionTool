@@ -36,37 +36,28 @@ class TestTestSuiteRunner(unittest.TestCase):
         products_dir.mkdir()
         macro_dir = target_source_dir / 'bin' / 'EPMacro' / 'Linux'
         macro_dir.mkdir(parents=True)
-        if system() == 'Windows':  # pragma: no cover  -- not running coverage results on Travis on Windows
-            # if we are on Windows, we need to prepackage up the python scripts as exe files for them to run
-            # properly across interpreters.  Its easy enough to do with pyinstaller, just need to set up a couple
-            # variables and run them all.  Also, we don't want to run them for every single test, just once if the dist/
-            # folder hasn't been created yet.
-            dist_folder = self.resources / 'dist'
-            products_map = {
-                self.resources / 'dummy.basement.idd': products_dir / 'BasementGHT.idd',
-                dist_folder / 'basement.exe': products_dir / 'Basement.exe',
-                self.resources / 'dummy.Energy+.idd': products_dir / 'Energy+.idd',
-                dist_folder / 'energyplus.exe': products_dir / 'energyplus.exe',
-                dist_folder / 'expandobjects.exe': products_dir / 'ExpandObjects.exe',
-                dist_folder / 'parametric.exe': products_dir / 'ParametricPreprocessor.exe',
-                dist_folder / 'readvars.exe': products_dir / 'ReadVarsESO.exe',
-                dist_folder / 'slab.exe': products_dir / 'Slab.exe',
-                self.resources / 'dummy.slab.idd': products_dir / 'SlabGHT.idd',
-                dist_folder / 'epmacro.exe': macro_dir / 'EPMacro.exe',
-            }
-        else:
-            products_map = {
-                self.resources / 'dummy.basement.idd': products_dir / 'BasementGHT.idd',
-                self.resources / 'dummy.basement.py': products_dir / 'Basement',
-                self.resources / 'dummy.Energy+.idd': products_dir / 'Energy+.idd',
-                self.resources / 'dummy.energyplus.py': products_dir / 'energyplus',
-                self.resources / 'dummy.expandobjects.py': products_dir / 'ExpandObjects',
-                self.resources / 'dummy.parametric.py': products_dir / 'ParametricPreprocessor',
-                self.resources / 'dummy.readvars.py': products_dir / 'ReadVarsESO',
-                self.resources / 'dummy.slab.py': products_dir / 'Slab',
-                self.resources / 'dummy.slab.idd': products_dir / 'SlabGHT.idd',
-                self.resources / 'dummy.epmacro.py': macro_dir / 'EPMacro',
-            }
+        use_windows_binaries = system() == 'Windows'
+        dist_folder = self.resources / 'dist'
+        products_map = {
+            self.resources / 'dummy.basement.idd': products_dir / 'BasementGHT.idd',
+            (dist_folder / 'basement.exe') if use_windows_binaries else (self.resources / 'dummy.basement.py'):
+                products_dir / ('Basement.exe' if use_windows_binaries else 'Basement'),
+            self.resources / 'dummy.Energy+.idd': products_dir / 'Energy+.idd',
+            (dist_folder / 'energyplus.exe') if use_windows_binaries else (self.resources / 'dummy.energyplus.py'):
+                products_dir / ('energyplus.exe' if use_windows_binaries else 'energyplus'),
+            (dist_folder / 'expandobjects.exe') if use_windows_binaries
+            else (self.resources / 'dummy.expandobjects.py'):
+                products_dir / ('ExpandObjects.exe' if use_windows_binaries else 'ExpandObjects'),
+            (dist_folder / 'parametric.exe') if use_windows_binaries else (self.resources / 'dummy.parametric.py'):
+                products_dir / ('ParametricPreprocessor.exe' if use_windows_binaries else 'ParametricPreprocessor'),
+            (dist_folder / 'readvars.exe') if use_windows_binaries else (self.resources / 'dummy.readvars.py'):
+                products_dir / ('ReadVarsESO.exe' if use_windows_binaries else 'ReadVarsESO'),
+            (dist_folder / 'slab.exe') if use_windows_binaries else (self.resources / 'dummy.slab.py'):
+                products_dir / ('Slab.exe' if use_windows_binaries else 'Slab'),
+            self.resources / 'dummy.slab.idd': products_dir / 'SlabGHT.idd',
+            (dist_folder / 'epmacro.exe') if use_windows_binaries else (self.resources / 'dummy.epmacro.py'):
+                macro_dir / ('EPMacro.exe' if use_windows_binaries else 'EPMacro'),
+        }
         for source in products_map:
             shutil.copy(source, products_map[source])
         testfiles_dir = target_source_dir / 'testfiles'
