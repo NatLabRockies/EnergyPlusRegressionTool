@@ -1,4 +1,3 @@
-import codecs
 import os
 from platform import system
 from setuptools import setup
@@ -6,11 +5,11 @@ from setuptools import setup
 from energyplus_regressions import NAME, VERSION
 
 this_dir = os.path.abspath(os.path.dirname(__file__))
-with codecs.open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_file:
+with open(os.path.join(this_dir, 'README.md'), encoding='utf-8') as i_file:
     long_description = i_file.read()
 
 
-install_requires = ['PyPubSub', 'beautifulsoup4==4.12.3', 'PLAN-Tools>=0.5']
+install_requires = ['PyPubSub', 'beautifulsoup4==4.14.3', 'PLAN-Tools>=0.7']
 if system() == 'Windows':
     install_requires.append('pypiwin32')
 

@@ -127,11 +127,11 @@ def thresh_abs_rel_diff(abs_thresh: float, rel_thresh: float, x: str, y: str) ->
 
 
 def prev_sib(entity):
-    """get soup.previousSibling ignoring stripping out all blank spaces"""
+    """get soup.previous_sibling ignoring stripping out all blank spaces"""
     prevs = entity
     i = 0
     while i == 0:
-        prevs = prevs.previousSibling
+        prevs = prevs.previous_sibling
         if isinstance(prevs, NavigableString):
             utxt = prevs.strip()
             if utxt == '':
@@ -228,7 +228,7 @@ def match_search_rows_to_base_rows(base_rows, search_rows):
 def hdict2soup(soup, heading, num, hdict, tdict, horder):
     """Create soup table (including anchor and heading) from header dictionary and error dictionary"""
     # Append table anchor
-    atag = Tag(soup, name='a', attrs=[('name', '%s%s' % ('tablehead', num,))])
+    atag = Tag(soup, name='a', attrs={'name': '%s%s' % ('tablehead', num,)})
     soup.body.append(atag)
 
     # Append table heading
@@ -237,7 +237,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
     soup.body.append(htag)
 
     # Append table
-    tabletag = Tag(soup, name='table', attrs=[('border', '1')])
+    tabletag = Tag(soup, name='table', attrs={'border': '1'})
     soup.body.append(tabletag)
 
     # Append column headings
@@ -280,7 +280,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
         tabletag.append(trtag)
         for h in horder:
             if h not in hdict:
-                tdtag = Tag(soup, name='td', attrs=[("class", "big")])
+                tdtag = Tag(soup, name='td', attrs={"class": "big"})
                 tdtag.append('ColumnHeadingDifference')
             elif h == 'Subcategory':
                 # Some tables such as the Source Energy End Use Components
@@ -297,7 +297,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
                 val = hdict[h][i]
                 if isinstance(val, tuple) and len(val) == 2:
                     diff, which = val
-                    tdtag = Tag(soup, name='td', attrs=[('class', which)])
+                    tdtag = Tag(soup, name='td', attrs={'class': which})
                     try:
                         tdtag.append(str(diff))
                     except Exception:  # pragma: no cover
@@ -312,7 +312,7 @@ def hdict2soup(soup, heading, num, hdict, tdict, horder):
                         tdtag.append(str(val))
             else:
                 (diff, which) = hdict[h][i]
-                tdtag = Tag(soup, name='td', attrs=[('class', which)])
+                tdtag = Tag(soup, name='td', attrs={'class': which})
                 try:
                     tdtag.append(str(diff))
                 except Exception:  # pragma: no cover
@@ -384,33 +384,36 @@ def make_err_table_row(err_soup, tabletag, uheading, count_of_tables, abs_diff_f
 
     if small_diff > 0 or big_diff > 0 or string_diff > 0:
         file_name = os.path.basename(abs_diff_file)
-        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (file_name, count_of_tables))])
+        atag = Tag(err_soup, name='a', attrs={'href': '%s#tablehead%s' % (file_name, count_of_tables)})
         atag.append('abs file')
         tdtag_abs_link.append(atag)
 
         file_name = os.path.basename(rel_diff_file)
-        atag = Tag(err_soup, name='a', attrs=[('href', '%s#tablehead%s' % (file_name, count_of_tables))])
+        atag = Tag(err_soup, name='a', attrs={'href': '%s#tablehead%s' % (file_name, count_of_tables)})
         atag.append('rel file')
         tdtag_rel_link.append(atag)
 
-    tdtag_big_diff = Tag(err_soup, name='td', attrs=[('class', 'big')] if big_diff > 0 else [])
+    tdtag_big_diff = Tag(err_soup, name='td', attrs={'class': 'big'} if big_diff > 0 else None)
     trtag.append(tdtag_big_diff)
     tdtag_big_diff.append(str(big_diff))
 
-    tdtag_small_diff = Tag(err_soup, name='td', attrs=[('class', 'small')] if small_diff > 0 else [])
+    tdtag_small_diff = Tag(err_soup, name='td', attrs={'class': 'small'} if small_diff > 0 else None)
     trtag.append(tdtag_small_diff)
     tdtag_small_diff.append(str(small_diff))
 
-    tdtag_equal = Tag(err_soup, name='td', attrs=[])
+    tdtag_equal = Tag(err_soup, name='td')
     trtag.append(tdtag_equal)
     tdtag_equal.append(str(equal))
 
-    tdtag_string_diff = Tag(err_soup, name='td', attrs=[('class', 'stringdiff')] if string_diff > 0 else [])
+    tdtag_string_diff = Tag(err_soup, name='td', attrs={'class': 'stringdiff'} if string_diff > 0 else None)
     trtag.append(tdtag_string_diff)
     tdtag_string_diff.append(str(string_diff))
 
-    tdtag_table_size_error = Tag(err_soup, name='td', attrs=[
-        ('class', 'table_size_error')] if size_error > 0 or not_in_1 > 0 or not_in_2 > 0 else [])
+    tdtag_table_size_error = Tag(
+        err_soup,
+        name='td',
+        attrs={'class': 'table_size_error'} if size_error > 0 or not_in_1 > 0 or not_in_2 > 0 else None
+    )
     trtag.append(tdtag_table_size_error)
     tdtag_table_size_error.append(
         'size mismatch' if size_error > 0 else 'not in 1' if not_in_1 > 0 else 'not in 2' if not_in_2 > 0 else '')
@@ -458,7 +461,7 @@ def table_diff(
                                   features='html.parser')
 
     # Make error table
-    tabletag = Tag(err_soup, name='table', attrs=[('border', '1')])
+    tabletag = Tag(err_soup, name='table', attrs={'border': '1'})
     err_soup.body.append(tabletag)
 
     # Make error table headings
