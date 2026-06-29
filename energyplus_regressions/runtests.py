@@ -7,6 +7,7 @@ from datetime import datetime
 import json
 from pathlib import Path
 from platform import system
+import re
 import shutil
 import sys
 
@@ -528,13 +529,6 @@ class SuiteRunner:
 
     @staticmethod
     def diff_text_files(file_a: Path, file_b: Path, diff_file: Path):
-        # read the contents of the two files into a list, could read it into text first
-        with file_a.open(encoding='utf-8') as f_txt_1:
-            txt1 = f_txt_1.readlines()
-        with file_b.open(encoding='utf-8') as f_txt_2:
-            txt2 = f_txt_2.readlines()
-        # remove any lines that have some specific listed strings in them
-        txt1_cleaned = []
         skip_strings = [
             "Program Version,EnergyPlus",
             "Version,",
@@ -550,24 +544,33 @@ class SuiteRunner:
             "ReadVars Run Time",
             "EnergyPlus Program Version",
             "PythonPlugin: Class",
-            "ExpandObjects Finished. Time:",
             "EnergyPlus, Version",
             "EnergyPlus Run Time=",
             "ParametricPreprocessor Finished. Time:",
-            "ExpandObjects Finished with Error(s). Time:",
             "Elapsed time: ",
         ]
-        for line in txt1:
-            if any([x in line for x in skip_strings]):
-                txt1_cleaned.append('-line skipped-')
-            else:
-                txt1_cleaned.append(line)
-        txt2_cleaned = []
-        for line in txt2:
-            if any([x in line for x in skip_strings]):
-                txt2_cleaned.append('-line skipped-')
-            else:
-                txt2_cleaned.append(line)
+        expand_objects_time = re.compile(
+            r"(\bTime\s*[:=]\s*)"
+            r"(\d+(?:\.\d+)?(?:\s*(?:hr|min|sec|ms|s))?"
+            r"(?:\s+\d+(?:\.\d+)?\s*(?:hr|min|sec|ms|s))*)",
+            re.IGNORECASE
+        )
+
+        def normalize_line(line):
+            if 'expandobjects' in line.lower():
+                return expand_objects_time.sub(r'\1<time ignored>', line)
+            if any(x in line for x in skip_strings):
+                return '-line skipped-'
+            return line
+
+        # read the contents of the two files into a list, could read it into text first
+        with file_a.open(encoding='utf-8') as f_txt_1:
+            txt1 = f_txt_1.readlines()
+        with file_b.open(encoding='utf-8') as f_txt_2:
+            txt2 = f_txt_2.readlines()
+        # remove any lines that have some specific listed strings or patterns in them
+        txt1_cleaned = [normalize_line(line) for line in txt1]
+        txt2_cleaned = [normalize_line(line) for line in txt2]
         if txt1_cleaned == txt2_cleaned:
             return TextDifferences.EQUAL
 
