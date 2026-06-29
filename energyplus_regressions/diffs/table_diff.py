@@ -87,6 +87,9 @@ td.table_size_error {
 td.stringdiff {
     background-color: #F6D8AE;
 }
+td.reordered {
+    background-color: #DDEEFF;
+}
 .big {
     background-color: #FF969D;
 }
@@ -97,6 +100,9 @@ td.stringdiff {
 
 .stringdiff {
     background-color: #F6D8AE;
+}
+.reordered {
+    background-color: #DDEEFF;
 }
 
 """
@@ -170,6 +176,10 @@ def row_cells_for_match(trow):
     return [normalize_row_match_value(tcol.get_text(' ', strip=True)) for tcol in trow('td')]
 
 
+def row_order_changed(original_rows, reordered_rows):
+    return any(original_row is not reordered_row for original_row, reordered_row in zip(original_rows, reordered_rows))
+
+
 def reorder_rows_to_match(base_keys, search_keys, search_rows):
     rows_by_key = defaultdict(deque)
     for key, row in zip(search_keys, search_rows):
@@ -184,7 +194,7 @@ def reorder_rows_to_match(base_keys, search_keys, search_rows):
     return reordered_rows
 
 
-def match_search_rows_to_base_rows(base_rows, search_rows):
+def match_search_rows_to_base_rows_with_status(base_rows, search_rows):
     """
     Reorder search_rows to match base_rows when row order is not semantically meaningful.
 
@@ -195,16 +205,17 @@ def match_search_rows_to_base_rows(base_rows, search_rows):
     may legitimately differ.
     """
     if not base_rows or not search_rows:
-        return search_rows
+        return search_rows, False
 
     base_keys = [row_cells_for_match(trow) for trow in base_rows]
     search_keys = [row_cells_for_match(trow) for trow in search_rows]
 
     if base_keys == search_keys:
-        return search_rows
+        return search_rows, False
 
     if Counter(map(tuple, base_keys)) == Counter(map(tuple, search_keys)):
-        return reorder_rows_to_match(base_keys, search_keys, search_rows)
+        reordered_rows = reorder_rows_to_match(base_keys, search_keys, search_rows)
+        return reordered_rows, row_order_changed(search_rows, reordered_rows)
 
     max_prefix_len = min(
         min((len(key) for key in base_keys), default=0),
@@ -220,9 +231,15 @@ def match_search_rows_to_base_rows(base_rows, search_rows):
         if Counter(base_prefixes) != Counter(search_prefixes):
             continue
 
-        return reorder_rows_to_match(base_prefixes, search_prefixes, search_rows)
+        reordered_rows = reorder_rows_to_match(base_prefixes, search_prefixes, search_rows)
+        return reordered_rows, row_order_changed(search_rows, reordered_rows)
 
-    return search_rows
+    return search_rows, False
+
+
+def match_search_rows_to_base_rows(base_rows, search_rows):
+    reordered_rows, _ = match_search_rows_to_base_rows_with_status(base_rows, search_rows)
+    return reordered_rows
 
 
 def hdict2soup(soup, heading, num, hdict, tdict, horder):
@@ -344,9 +361,10 @@ def table2hdict_horder(table, table_a=None):
     # But we can handle it specially if we passed in table_a and the rows are just reordered.
     # Prefer whole-row matching first, but if a row has actual value diffs we can still align it
     # by the shortest unique leading-column key that exists in both tables.
+    reordered = False
     if table_a:
         trows_a = table_a('tr')
-        search_rows = match_search_rows_to_base_rows(trows_a[1:], search_rows)
+        search_rows, reordered = match_search_rows_to_base_rows_with_status(trows_a[1:], search_rows)
 
     # whether it was reordered or just using the literal order, build out the hdict instance to pass back
     for trow in search_rows:
@@ -363,11 +381,11 @@ def table2hdict_horder(table, table_a=None):
 
             hdict[hcontents].append(contents)
 
-    return hdict, horder
+    return hdict, horder, reordered
 
 
 def make_err_table_row(err_soup, tabletag, uheading, count_of_tables, abs_diff_file, rel_diff_file,
-                       small_diff, big_diff, equal, string_diff, size_error, not_in_1, not_in_2):
+                       small_diff, big_diff, equal, string_diff, size_error, not_in_1, not_in_2, reordered):
     # Create entry in error table
     trtag = Tag(err_soup, name='tr')
     tabletag.append(trtag)
@@ -418,6 +436,10 @@ def make_err_table_row(err_soup, tabletag, uheading, count_of_tables, abs_diff_f
     tdtag_table_size_error.append(
         'size mismatch' if size_error > 0 else 'not in 1' if not_in_1 > 0 else 'not in 2' if not_in_2 > 0 else '')
 
+    tdtag_reordered = Tag(err_soup, name='td', attrs={'class': 'reordered'} if reordered else None)
+    trtag.append(tdtag_reordered)
+    tdtag_reordered.append('yes' if reordered else '')
+
 
 def table_diff(
         thresh_dict: ThreshDict, input_file_1: str, input_file_2: str, abs_diff_file: str,
@@ -428,7 +450,7 @@ def table_diff(
     (
         <message>, <#tables>, <#big_diff>,
         <#small_diff>, <#equals>, <#string_diff>,
-        <#size_diff>, <#not_in_file1>, <#not_in_file2>
+        <#size_diff>, <#not_in_file1>, <#not_in_file2>, <#reordered_tables>
     )
     """
     file_1 = Path(input_file_1)
@@ -438,9 +460,9 @@ def table_diff(
 
     # Test for existence of input files
     if not file_1.exists():
-        return 'unable to open file <%s>' % input_file_1, 0, 0, 0, 0, 0, 0, 0, 0
+        return 'unable to open file <%s>' % input_file_1, 0, 0, 0, 0, 0, 0, 0, 0, 0
     if not file_2.exists():
-        return 'unable to open file <%s>' % input_file_2, 0, 0, 0, 0, 0, 0, 0, 0
+        return 'unable to open file <%s>' % input_file_2, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
     with open(file_1, 'rb') as f_1:
         txt1 = f_1.read().decode('utf-8', errors='ignore')
@@ -467,7 +489,10 @@ def table_diff(
     # Make error table headings
     trtag = Tag(err_soup, name='tr')
     tabletag.append(trtag)
-    for title in ['Table', 'Abs file', 'Rel file', 'Big diffs', 'Small diffs', 'Equals', 'String diffs', 'Size diffs']:
+    for title in [
+        'Table', 'Abs file', 'Rel file', 'Big diffs', 'Small diffs', 'Equals', 'String diffs', 'Size diffs',
+        'Reordered'
+    ]:
         thtag = Tag(err_soup, name='th')
         trtag.append(thtag)
         thtag.append(title)
@@ -487,13 +512,16 @@ def table_diff(
         uheadings2.append(get_table_unique_heading(table))
 
     if any([x is None for x in uheadings1]):
-        return 'malformed comment/table structure in <%s>' % input_file_1, 0, 0, 0, 0, 0, 0, 0, 0
+        return 'malformed comment/table structure in <%s>' % input_file_1, 0, 0, 0, 0, 0, 0, 0, 0, 0
     if any([x is None for x in uheadings2]):
-        return 'malformed comment/table structure in <%s>' % input_file_2, 0, 0, 0, 0, 0, 0, 0, 0
+        return 'malformed comment/table structure in <%s>' % input_file_2, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
     uhset1 = set(uheadings1)
     uhset2 = set(uheadings2)
     uhset_match = set.intersection(uhset1, uhset2)
+    uheading_positions2 = defaultdict(deque)
+    for i2, uheading2 in enumerate(uheadings2):
+        uheading_positions2[uheading2].append(i2)
 
     count_of_tables = 0
     count_of_tables_diff = 0
@@ -505,6 +533,7 @@ def table_diff(
     count_of_size_error = 0
     count_of_not_in_1 = 0
     count_of_not_in_2 = 0
+    count_of_reordered_tables = 0
 
     for i1 in range(0, len(list(uheadings1))):
 
@@ -517,6 +546,7 @@ def table_diff(
         table_size_error = 0
         table_not_in_1 = 0
         table_not_in_2 = 0
+        table_reordered = False
 
         uheading1 = uheadings1[i1]
 
@@ -536,11 +566,14 @@ def table_diff(
             count_of_big_diff += table_big_diff
             make_err_table_row(err_soup, tabletag, uheading1, count_of_tables, abs_diff_file, rel_diff_file,
                                table_small_diff, table_big_diff, table_equal, table_string_diff, table_size_error,
-                               table_not_in_1, table_not_in_2)
+                               table_not_in_1, table_not_in_2, table_reordered)
             continue
 
         table1 = tables1[i1]
-        table2 = tables2[uheadings2.index(uheading1)]
+        table2_index = uheadings2.index(uheading1)
+        table2_order_index = uheading_positions2[uheading1].popleft()
+        table2 = tables2[table2_index]
+        table_reordered = table2_order_index != i1
 
         # Table size error
         if len(table1('tr')) != len(table2('tr')) or len(table1('td')) != len(table2('td')):
@@ -548,25 +581,19 @@ def table_diff(
             count_of_size_error += table_size_error
             table_big_diff = 1
             count_of_big_diff += table_big_diff
+            if table_reordered:
+                count_of_reordered_tables += 1
             make_err_table_row(err_soup, tabletag, uheading1, count_of_tables, abs_diff_file, rel_diff_file,
                                table_small_diff, table_big_diff, table_equal, table_string_diff, table_size_error,
-                               table_not_in_1, table_not_in_2)
+                               table_not_in_1, table_not_in_2, table_reordered)
             continue
 
-        # create a list of order-dependent table uheading keys, tables that include these keys in the name
-        # these will use strict row order enforcement
-        row_order_dependent_table_keys = ['Monthly', 'Topology']
-
         # always process the first table into a base hdict
-        hdict1, horder1 = table2hdict_horder(table1)
-
-        # if we are in a row order dependent table, don't pass table1 as a baseline, just use the literal in-place order
-        if any(k in uheading1 for k in row_order_dependent_table_keys):
-            hdict2, horder2 = table2hdict_horder(table2)
-        # but for all other tables, we can use the first table as a baseline to carefully match up the rows
-        else:
-            hdict2, horder2 = table2hdict_horder(table2, table1)
-        compare_row_label_fields = not any(k in uheading1 for k in row_order_dependent_table_keys)
+        hdict1, horder1, _ = table2hdict_horder(table1)
+        hdict2, horder2, rows_reordered = table2hdict_horder(table2, table1)
+        table_reordered = table_reordered or rows_reordered
+        if table_reordered:
+            count_of_reordered_tables += 1
 
         # honestly, if the column headings have changed, this should be an indicator to all reviewers that this needs
         # up close investigation.  As such, we are going to trigger the following things:
@@ -590,7 +617,7 @@ def table_diff(
 
         for h in horder1:
             if h == 'DummyPlaceholder':
-                if h not in horder2 or not compare_row_label_fields:
+                if h not in horder2:
                     diff_dict[h] = hdict1[h]
                 else:
                     diff_dict[h] = []
@@ -638,7 +665,7 @@ def table_diff(
 
         make_err_table_row(err_soup, tabletag, uheading1, count_of_tables, abs_diff_file, rel_diff_file,
                            table_small_diff, table_big_diff, table_equal, table_string_diff, table_size_error,
-                           table_not_in_1, table_not_in_2)
+                           table_not_in_1, table_not_in_2, table_reordered)
 
         # If there were no differences, we are done
         if (table_small_diff == 0) and (table_big_diff == 0) and (table_string_diff == 0):
@@ -668,7 +695,7 @@ def table_diff(
             count_of_tables += 1
             count_of_not_in_1 += 1
             make_err_table_row(err_soup, tabletag, uheading2, count_of_tables, abs_diff_file, rel_diff_file,
-                               0, 0, 0, 0, 0, 1, 0)
+                               0, 0, 0, 0, 0, 1, 0, False)
 
     # Write error file
     err_txt = err_soup.prettify()
@@ -690,16 +717,16 @@ def table_diff(
             with open(summary_file, 'w') as summarize:
                 summarize.write(
                     "Case,TableCount,BigDiffCount,SmallDiffCount,EqualCount,"
-                    "StringDiffCount,SizeErrorCount,NotIn1Count,NotIn2Count\n"
+                    "StringDiffCount,SizeErrorCount,NotIn1Count,NotIn2Count,ReorderedTableCount\n"
                 )
         with open(summary_file, 'a') as summarize:
-            summarize.write("%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (
+            summarize.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (
                 case_name, count_of_tables, count_of_big_diff, count_of_small_diff, count_of_equal,
                 count_of_string_diff,
-                count_of_size_error, count_of_not_in_1, count_of_not_in_2))
+                count_of_size_error, count_of_not_in_1, count_of_not_in_2, count_of_reordered_tables))
 
     return ('', count_of_tables, count_of_big_diff, count_of_small_diff, count_of_equal, count_of_string_diff,
-            count_of_size_error, count_of_not_in_1, count_of_not_in_2)
+            count_of_size_error, count_of_not_in_1, count_of_not_in_2, count_of_reordered_tables)
 
 
 def main(argv=None) -> int:  # pragma: no cover

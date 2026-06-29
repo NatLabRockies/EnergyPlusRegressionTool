@@ -85,6 +85,13 @@ class TestTableDifferences(unittest.TestCase):
         self.assertIn('table_count', obj)
         self.assertIn('big_diff_count', obj)
         self.assertIn('small_diff_count', obj)
+        self.assertIn('reordered_table_count', obj)
+
+    def test_instance_to_dict_with_reordered_tables(self):
+        from_table_diff = ['msg', 'tbl_count', 0, 0, 2, 0, 0, 0, 0, 1]
+        t = TableDifferences(from_table_diff)
+        obj = t.to_dict()
+        self.assertEqual(1, obj['reordered_table_count'])
 
 
 class TestEndErrSummary(unittest.TestCase):
@@ -276,3 +283,21 @@ class TestCompletedStructure(unittest.TestCase):
         self.assertEqual(['filename'], obj['diffs']['big_table'])
         self.assertEqual([], obj['diffs']['small_table'])
         self.assertEqual(1, obj['results_by_file'][0]['table_diffs']['string_diff_count'])
+
+    def test_to_json_summary_does_not_report_reordered_only_table_as_diff(self):
+        c = CompletedStructure(
+            Path('/a/source/dir'), Path('/a/build/dir'),
+            Path('/b/source/dir'), Path('/b/build/dir'),
+            Path('/r/dir1'), Path('/r/dir2'),
+            datetime.now()
+        )
+        t = TestEntry('filename', 'weather')
+        t.add_summary_result(EndErrSummary(EndErrSummary.STATUS_SUCCESS, 1, EndErrSummary.STATUS_SUCCESS, 1))
+        t.add_table_differences(TableDifferences(['', 1, 0, 0, 2, 0, 0, 0, 0, 1]))
+        c.add_test_entry(t)
+
+        obj = c.to_json_summary()
+
+        self.assertEqual([], obj['diffs']['big_table'])
+        self.assertEqual([], obj['diffs']['small_table'])
+        self.assertEqual(1, obj['results_by_file'][0]['table_diffs']['reordered_table_count'])

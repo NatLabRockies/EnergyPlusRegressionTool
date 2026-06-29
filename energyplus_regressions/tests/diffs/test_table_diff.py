@@ -671,13 +671,22 @@ class TestTableDiff(unittest.TestCase):
         )
         self.assertEqual('', response[0])  # diff status
         self.assertEqual(2, response[1])  # count_of_tables
-        self.assertEqual(2, response[2])  # big diffs  # Only because of the time-based table reordered
+        self.assertEqual(0, response[2])  # big diffs
         self.assertEqual(0, response[3])  # small diffs
-        self.assertEqual(93, response[4])  # equals
+        self.assertEqual(95, response[4])  # equals
         self.assertEqual(0, response[5])  # string diffs
         self.assertEqual(0, response[6])  # size errors
         self.assertEqual(0, response[7])  # in file 2 but not in file 1
         self.assertEqual(0, response[8])  # in file 1 but not in file 2
+        self.assertEqual(2, response[9])  # reordered tables
+
+        summary = Path(os.path.join(self.temp_output_dir, 'summary.htm')).read_text()
+        self.assertIn('ReorderedTableCount', summary)
+        self.assertIn(',2\n', summary)
+
+        err_summary = Path(os.path.join(self.temp_output_dir, 'math_diff.log')).read_text()
+        self.assertIn('Reordered', err_summary)
+        self.assertIn('yes', err_summary)
 
     def test_reordering_with_case_only_key_column_changes_and_real_value_diff(self):
         # Coil sizing tables can reorder rows while also changing the presentation case of an
