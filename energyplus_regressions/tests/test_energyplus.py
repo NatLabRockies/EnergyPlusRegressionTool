@@ -2,9 +2,10 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from energyplus_regressions.builds.base import BuildTree
-from energyplus_regressions.energyplus import ExecutionArguments, execute_energyplus
+from energyplus_regressions.energyplus import ExecutionArguments, execute_energyplus, link_or_copy
 from energyplus_regressions.structures import ReportingFreq, ForceRunType
 
 
@@ -199,3 +200,13 @@ class TestEnergyPlus(unittest.TestCase):
         self.assertEqual('entry_name', return_val[1])
         self.assertFalse(return_val[2])  # Fail
         self.assertFalse(return_val[3])
+
+    def test_link_or_copy_falls_back_to_copy(self):
+        source = self.run_dir / 'source.txt'
+        destination = self.run_dir / 'destination.txt'
+        source.write_text('contents')
+
+        with patch('energyplus_regressions.energyplus.os.link', side_effect=OSError):
+            link_or_copy(source, destination)
+
+        self.assertEqual('contents', destination.read_text())

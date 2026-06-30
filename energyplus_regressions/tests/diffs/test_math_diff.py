@@ -29,6 +29,48 @@ class TestMathDiff(unittest.TestCase):
         self.assertEqual(0, response[2])  # big diffs
         self.assertEqual(0, response[3])  # small diffs
 
+    def test_identical_totally_empty_files(self):
+        response = math_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplusout_totally_empty.csv'),
+            os.path.join(self.diff_files_dir, 'eplusout_totally_empty.csv'),
+            os.path.join(self.temp_output_dir, 'abs_diff.csv'),
+            os.path.join(self.temp_output_dir, 'rel_diff.csv'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.csv'),
+        )
+        self.assertIn('malformed or empty csv file', response[0])
+        self.assertEqual(0, response[1])
+        self.assertEqual(0, response[2])
+        self.assertEqual(0, response[3])
+
+    def test_identical_empty_data_files(self):
+        response = math_diff(
+            self.thresh_dict,
+            os.path.join(self.diff_files_dir, 'eplusout_empty_data.csv'),
+            os.path.join(self.diff_files_dir, 'eplusout_empty_data.csv'),
+            os.path.join(self.temp_output_dir, 'abs_diff.csv'),
+            os.path.join(self.temp_output_dir, 'rel_diff.csv'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.csv'),
+        )
+        self.assertIn('has no data', response[0])
+        self.assertEqual(0, response[1])
+        self.assertEqual(0, response[2])
+        self.assertEqual(0, response[3])
+
+    def test_identical_duplicate_header_fails(self):
+        with self.assertRaises(DuplicateHeaderException):
+            math_diff(
+                self.thresh_dict,
+                os.path.join(self.diff_files_dir, 'eplusout_duplicate_header.csv'),
+                os.path.join(self.diff_files_dir, 'eplusout_duplicate_header.csv'),
+                os.path.join(self.temp_output_dir, 'abs_diff.csv'),
+                os.path.join(self.temp_output_dir, 'rel_diff.csv'),
+                os.path.join(self.temp_output_dir, 'math_diff.log'),
+                os.path.join(self.temp_output_dir, 'summary.csv'),
+            )
+
     def test_small_diff_in_watts_files(self):
         """This tests the ability to capture diffs in a regular (not-temperature) variable"""
         response = math_diff(
