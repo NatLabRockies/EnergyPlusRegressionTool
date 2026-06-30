@@ -2264,6 +2264,26 @@ class TestTestSuiteRunner(unittest.TestCase):
         diff_file = self.temp_base_build_dir / 'err.diff'
         self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_text_files(base_err, mod_err, diff_file))
 
+    def test_stdout_diff_equal_with_expandobjects_time_variants(self):
+        base_stdout = self.temp_mod_source_dir / 'base.stdout'
+        mod_stdout = self.temp_mod_source_dir / 'mod.stdout'
+        with open(base_stdout, 'w') as f:
+            f.write('ExpandObjects Finished. Time: 00hr 00min 0.01sec\nOther output\n')
+        with open(mod_stdout, 'w') as f:
+            f.write('ExpandObjects Finished. Time: 00hr 00min 2.34sec\nOther output\n')
+        diff_file = self.temp_base_build_dir / 'stdout.diff'
+        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_text_files(base_stdout, mod_stdout, diff_file))
+
+    def test_stdout_diff_flags_expandobjects_non_time_differences(self):
+        base_stdout = self.temp_mod_source_dir / 'base.stdout'
+        mod_stdout = self.temp_mod_source_dir / 'mod.stdout'
+        with open(base_stdout, 'w') as f:
+            f.write('ExpandObjects Finished. Time: 0.01\nOther output\n')
+        with open(mod_stdout, 'w') as f:
+            f.write('ExpandObjects Finished with Error(s). Time: 2.34\nOther output\n')
+        diff_file = self.temp_base_build_dir / 'stdout.diff'
+        self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_text_files(base_stdout, mod_stdout, diff_file))
+
     def test_perf_log_equal_with_ignored_differences(self):
         base_perf_log = self.resources / 'eplusout_perflog_base.csv'
         mod_perf_log = self.resources / 'eplusout_perflog_same_except_times.csv'
