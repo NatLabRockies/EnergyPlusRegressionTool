@@ -54,6 +54,7 @@ __license__ = "GNU General Public License Version 3"
 # - how the program will respond when the time stamps do not match
 # - documentation of data structure in the program
 
+import filecmp
 import getopt
 import os
 import sys
@@ -218,6 +219,40 @@ def info(line, logfile=None):
     # print >> sys.stderr, line
 
 
+def write_summary_csv(summary_csv, input_file_1, diff_type, num_records):
+    if not summary_csv:
+        return
+    input_file_path_tokens = input_file_1.split(os.sep)
+    if not os.path.isfile(summary_csv):
+        with open(summary_csv, 'w') as f:
+            f.write("CaseName,FileName,Status,#Records\n")
+    with open(summary_csv, 'a') as f:
+        f.write(
+            "%s,%s,%s,%s records compared\n" % (
+                input_file_path_tokens[-2], input_file_path_tokens[-1], diff_type, num_records
+            )
+        )
+
+
+def exact_match_result(input_file_1, input_file_2, err_file, summary_csv):
+    if not filecmp.cmp(input_file_1, input_file_2, shallow=False):
+        return None
+    try:
+        mat = mycsv.getlist(input_file_1)
+    except IndexError:
+        return 'malformed or empty csv file: <%s>' % input_file_1, 0, 0, 0
+    if len(mat) < 2:
+        info('<%s> has no data' % input_file_1, err_file)
+        return '<%s> has no data' % input_file_1, 0, 0, 0
+    if isinstance(mat[0], list) and len(set(mat[0])) != len(mat[0]):
+        for header in mat[0]:
+            if mat[0].count(header) > 1:
+                raise DuplicateHeaderException("There are two columns with the same header name " + str(header))
+    num_records = len(mat) - 1
+    write_summary_csv(summary_csv, input_file_1, 'All Equal', num_records)
+    return 'All Equal', num_records, 0, 0
+
+
 def math_diff(thresh_dict, input_file_1, input_file_2, abs_diff_file, rel_diff_file, err_file, summary_csv):
     # Test for existence of input files
     if not os.path.exists(input_file_1):
@@ -226,6 +261,10 @@ def math_diff(thresh_dict, input_file_1, input_file_2, abs_diff_file, rel_diff_f
     if not os.path.exists(input_file_2):
         info('unable to open file <%s>' % input_file_2, err_file)
         return 'unable to open file <%s>' % input_file_2, 0, 0, 0
+
+    fast_result = exact_match_result(input_file_1, input_file_2, err_file, summary_csv)
+    if fast_result:
+        return fast_result
 
     # read data out of files
     try:
@@ -362,20 +401,9 @@ def math_diff(thresh_dict, input_file_1, input_file_2, abs_diff_file, rel_diff_f
 
     num_records = len(t_dict[t_key])
 
-    input_file_path_tokens = input_file_1.split(os.sep)
-
     # if it's the first pass, create the file with the header;
     # also the null-pointer-ish check allows skipping the summary_csv file if the filename is blank
-    if summary_csv:
-        if not os.path.isfile(summary_csv):
-            with open(summary_csv, 'w') as f:
-                f.write("CaseName,FileName,Status,#Records\n")
-        with open(summary_csv, 'a') as f:
-            f.write(
-                "%s,%s,%s,%s records compared\n" % (
-                    input_file_path_tokens[-2], input_file_path_tokens[-1], diff_type, num_records
-                )
-            )
+    write_summary_csv(summary_csv, input_file_1, diff_type, num_records)
 
     # We are done
     if diff_type == 'All Equal':
