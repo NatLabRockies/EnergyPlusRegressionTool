@@ -674,7 +674,7 @@ def table_diff(
         # Add difference tables to absolute and relative difference soups
         abs_diff_dict = {}
         for h in horder1:
-            if h not in horder2:
+            if h not in horder2 and h != 'DummyPlaceholder':
                 continue
             abs_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
                 (x_y_z[0], x_y_z[2]) for x_y_z in diff_dict[h]]
@@ -682,7 +682,7 @@ def table_diff(
 
         rel_diff_dict = {}
         for h in horder1:
-            if h not in horder2:
+            if h not in horder2 and h != 'DummyPlaceholder':
                 continue
             rel_diff_dict[h] = diff_dict[h] if (h == 'DummyPlaceholder' or h == 'Subcategory') else [
                 (x_y_z[1], x_y_z[2]) for x_y_z in diff_dict[h]]

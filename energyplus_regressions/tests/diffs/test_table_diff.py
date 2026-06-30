@@ -688,6 +688,84 @@ class TestTableDiff(unittest.TestCase):
         self.assertIn('Reordered', err_summary)
         self.assertIn('yes', err_summary)
 
+    def test_reordered_table_with_size_error_counts_as_reordered(self):
+        base_file = Path(self.temp_output_dir) / 'reordered_size_error_base.htm'
+        mod_file = Path(self.temp_output_dir) / 'reordered_size_error_mod.htm'
+        base_file.write_text("""
+            <html><body>
+            <!-- FullName:Report_A -->
+            <table><tr><td></td><td>Value</td></tr><tr><td>A</td><td>1</td></tr></table>
+            <!-- FullName:Report_B -->
+            <table><tr><td></td><td>Value</td></tr><tr><td>B</td><td>2</td></tr></table>
+            </body></html>
+        """)
+        mod_file.write_text("""
+            <html><body>
+            <!-- FullName:Report_B -->
+            <table><tr><td></td><td>Value</td></tr><tr><td>B</td><td>2</td></tr></table>
+            <!-- FullName:Report_A -->
+            <table>
+              <tr><td></td><td>Value</td></tr>
+              <tr><td>A</td><td>1</td></tr>
+              <tr><td>A2</td><td>3</td></tr>
+            </table>
+            </body></html>
+        """)
+
+        response = table_diff(
+            self.thresh_dict,
+            str(base_file),
+            str(mod_file),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(2, response[1])  # count_of_tables
+        self.assertEqual(1, response[2])  # big diffs
+        self.assertEqual(1, response[6])  # size errors
+        self.assertEqual(2, response[9])  # reordered tables
+
+    def test_blank_row_label_heading_missing_from_modified_table(self):
+        base_file = Path(self.temp_output_dir) / 'blank_row_heading_base.htm'
+        mod_file = Path(self.temp_output_dir) / 'blank_row_heading_mod.htm'
+        base_file.write_text("""
+            <html><body>
+            <!-- FullName:Report_A -->
+            <table>
+              <tr><td></td><td>Value</td></tr>
+              <tr><td>A</td><td>1</td></tr>
+            </table>
+            </body></html>
+        """)
+        mod_file.write_text("""
+            <html><body>
+            <!-- FullName:Report_A -->
+            <table>
+              <tr><td>Row Label</td><td>Value</td></tr>
+              <tr><td>A</td><td>1</td></tr>
+            </table>
+            </body></html>
+        """)
+
+        response = table_diff(
+            self.thresh_dict,
+            str(base_file),
+            str(mod_file),
+            os.path.join(self.temp_output_dir, 'abs_diff.htm'),
+            os.path.join(self.temp_output_dir, 'rel_diff.htm'),
+            os.path.join(self.temp_output_dir, 'math_diff.log'),
+            os.path.join(self.temp_output_dir, 'summary.htm'),
+        )
+
+        self.assertEqual('', response[0])  # diff status
+        self.assertEqual(1, response[1])  # count_of_tables
+        self.assertEqual(1, response[2])  # big diffs
+        self.assertEqual(1, response[5])  # string diffs
+        self.assertEqual(1, response[6])  # size errors
+
     def test_reordering_with_case_only_key_column_changes_and_real_value_diff(self):
         # Coil sizing tables can reorder rows while also changing the presentation case of an
         # identifier column. We still want to align rows by their stable leading key while
