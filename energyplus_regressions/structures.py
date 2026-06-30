@@ -151,6 +151,7 @@ class TableDifferences:
         self.size_err_count = args_from_table_diff[6]
         self.not_in_1_count = args_from_table_diff[7]
         self.not_in_2_count = args_from_table_diff[8]
+        self.reordered_table_count = args_from_table_diff[9] if len(args_from_table_diff) > 9 else 0
 
     def to_dict(self):
         response = dict()
@@ -163,6 +164,7 @@ class TableDifferences:
         response['size_err_count'] = self.size_err_count
         response['not_in_1_count'] = self.not_in_1_count
         response['not_in_2_count'] = self.not_in_2_count
+        response['reordered_table_count'] = self.reordered_table_count
         return response
 
 
