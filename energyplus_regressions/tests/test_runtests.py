@@ -2290,6 +2290,11 @@ class TestTestSuiteRunner(unittest.TestCase):
         diff_file = self.temp_base_build_dir / 'perf_log.diff'
         self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_perf_log(base_perf_log, mod_perf_log, diff_file))
 
+    def test_perf_log_exact_match(self):
+        base_perf_log = self.resources / 'eplusout_perflog_base.csv'
+        diff_file = self.temp_base_build_dir / 'perf_log.diff'
+        self.assertEqual(TextDifferences.EQUAL, SuiteRunner.diff_perf_log(base_perf_log, base_perf_log, diff_file))
+
     def test_perf_log_diffs(self):
         base_perf_log = self.resources / 'eplusout_perflog_base.csv'
         mod_perf_log = self.resources / 'eplusout_perflog_mod.csv'
@@ -2377,6 +2382,19 @@ class TestTestSuiteRunner(unittest.TestCase):
         file_path_to_read = self.resources / 'BadUTF8Marker.idf'
         # this should simply pass without throwing an exception
         SuiteRunner.read_file_content(file_path_to_read)
+
+    def test_run_build_delegates_prepared_runs(self):
+        runner = object.__new__(SuiteRunner)
+        build_tree = object()
+        prepared_runs = [object()]
+        calls = []
+
+        runner.prepare_build_runs = lambda build: prepared_runs if build is build_tree else []
+        runner.execute_energyplus_runs = lambda runs: calls.append(runs)
+
+        runner.run_build(build_tree)
+
+        self.assertEqual([prepared_runs], calls)
 
 
 class TestSQLiteForce(unittest.TestCase):

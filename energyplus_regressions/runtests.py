@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import argparse
 from datetime import datetime
+import filecmp
 import json
 from pathlib import Path
 from platform import system
@@ -37,6 +38,14 @@ from multiprocessing import Pool
 
 # get the current file path for convenience
 script_dir = Path(__file__).resolve().parent
+_thresh_dict_cache = {}
+
+
+def get_thresh_dict(thresh_dict_file):
+    cache_key = str(Path(thresh_dict_file).resolve())
+    if cache_key not in _thresh_dict_cache:
+        _thresh_dict_cache[cache_key] = td.ThreshDict(thresh_dict_file)
+    return _thresh_dict_cache[cache_key]
 
 
 class TestRunConfiguration:
@@ -138,12 +147,8 @@ class SuiteRunner:
         start_time = datetime.now()
         self.my_starting(len(self.entries))
 
-        # run the energyplus script
-        self.run_build(self.build_tree_a)
-        if self.id_like_to_stop_now:  # pragma: no cover
-            self.my_cancelled()
-            return
-        self.run_build(self.build_tree_b)
+        # run the energyplus simulations
+        self.run_builds([self.build_tree_a, self.build_tree_b])
         if self.id_like_to_stop_now:  # pragma: no cover
             self.my_cancelled()
             return
@@ -260,7 +265,7 @@ class SuiteRunner:
 
         return idf_text
 
-    def run_build(self, build_tree: BuildTree):
+    def prepare_build_runs(self, build_tree: BuildTree):
 
         this_test_dir: str = self.test_output_dir
         local_run_type: str = self.force_run_type
@@ -452,6 +457,18 @@ class SuiteRunner:
                 )
             )
 
+        return energy_plus_runs
+
+    def run_build(self, build_tree: BuildTree):
+        self.execute_energyplus_runs(self.prepare_build_runs(build_tree))
+
+    def run_builds(self, build_trees: list[BuildTree]):
+        energy_plus_runs = []
+        for build_tree in build_trees:
+            energy_plus_runs.extend(self.prepare_build_runs(build_tree))
+        self.execute_energyplus_runs(energy_plus_runs)
+
+    def execute_energyplus_runs(self, energy_plus_runs: list[ExecutionArguments]):
         # So...on Windows, pyinstaller freezes the application, and then multiprocessing vomits on this.
         # If you are running this from code, say from a Pip install, it works fine.  It's merely the combination of
         # freezing _plus_ multiprocessing.  Apparently the tool needs to run multiprocessing.freeze_support(), which I
@@ -491,6 +508,8 @@ class SuiteRunner:
     def diff_perf_log(file_a: Path, file_b: Path, diff_file: Path):
         # will do a pretty simple CSV text token comparison, no numeric comparison, and omit some certain patterns
         tokens_to_skip = [1, 2, 27, 28, 30, 31]
+        if filecmp.cmp(file_a, file_b, shallow=False):
+            return TextDifferences.EQUAL
         with file_a.open(encoding='utf-8') as f_txt_1:
             txt1 = f_txt_1.readlines()
         with file_b.open(encoding='utf-8') as f_txt_2:
@@ -563,6 +582,9 @@ class SuiteRunner:
                 return '-line skipped-'
             return line
 
+        if filecmp.cmp(file_a, file_b, shallow=False):
+            return TextDifferences.EQUAL
+
         # read the contents of the two files into a list, could read it into text first
         with file_a.open(encoding='utf-8') as f_txt_1:
             txt1 = f_txt_1.readlines()
@@ -626,13 +648,12 @@ class SuiteRunner:
 
     @staticmethod
     def diff_glhe_files(file_a: Path, file_b: Path, diff_file: Path):
+        if filecmp.cmp(file_a, file_b, shallow=False):
+            return TextDifferences.EQUAL
         with file_a.open(encoding='utf-8') as f_txt_1:
             txt1 = f_txt_1.read()
         with file_b.open(encoding='utf-8') as f_txt_2:
             txt2 = f_txt_2.read()
-        # return early if the files match
-        if txt1 == txt2:
-            return TextDifferences.EQUAL
         # if they don't match as a string, they could still match in terms of values, need to parse into objects
         json_1 = json.loads(txt1)
         json_2 = json.loads(txt2)
@@ -731,13 +752,12 @@ class SuiteRunner:
         num_values_checked = 0
         num_big_diffs = 0
         num_small_diffs = 0
+        if filecmp.cmp(file_a, file_b, shallow=False):
+            return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
         with file_a.open(encoding='utf-8') as f_txt_1:
             txt1 = f_txt_1.read()
         with file_b.open(encoding='utf-8') as f_txt_2:
             txt2 = f_txt_2.read()
-        # return early if the files match
-        if txt1 == txt2:
-            return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
         # if they don't match as a string, they could still match in terms of values, need to parse into objects
         json_1 = json.loads(txt1)
         json_2 = json.loads(txt2)
@@ -901,7 +921,7 @@ class SuiteRunner:
             return this_entry, "Skipping an entry because it has an unknown end status: %s" % this_entry.basename
 
         # Load diffing threshold dictionary
-        thresh_dict = td.ThreshDict(thresh_dict_file)
+        thresh_dict = get_thresh_dict(thresh_dict_file)
 
         # Do Math (CSV) Diffs
         if SuiteRunner.both_files_exist(case_result_dir_1, case_result_dir_2, 'eplusout.csv'):
