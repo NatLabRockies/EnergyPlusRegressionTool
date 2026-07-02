@@ -16,10 +16,16 @@ if system() == 'Windows':
 setup(
     name=NAME,
     version=VERSION,
-    packages=['energyplus_regressions', 'energyplus_regressions.builds', 'energyplus_regressions.diffs'],
+    packages=[
+        'energyplus_regressions',
+        'energyplus_regressions.builds',
+        'energyplus_regressions.diffs',
+        'energyplus_regressions.icons',
+    ],
     include_package_data=True,
     package_data={
-        'energyplus_regressions': ['diffs/math_diff.config', 'icons/icon.png', 'icons/icon.ico', 'icons/icon.icns']
+        'energyplus_regressions.diffs': ['math_diff.config'],
+        'energyplus_regressions.icons': ['icon.png', 'icon.ico', 'icon.icns'],
     },
     url='https://github.com/NatLabRockies/EnergyPlusRegressionTool',
     license='ModifiedBSD',
