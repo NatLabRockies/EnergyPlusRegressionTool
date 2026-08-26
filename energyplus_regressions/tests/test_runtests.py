@@ -2350,7 +2350,7 @@ class TestTestSuiteRunner(unittest.TestCase):
         base_dir = self.temp_base_build_dir
         mod_dir = self.temp_mod_build_dir
 
-        end_contents = 'EnergyPlus Completed Successfully-- 1 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  1.42sec'
+        end_contents = 'EnergyPlus Completed Successfully-- 1 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  1.42sec'  # noqa: E501
         (base_dir / 'eplusout.end').write_text(end_contents)
         (mod_dir / 'eplusout.end').write_text(end_contents)
 
