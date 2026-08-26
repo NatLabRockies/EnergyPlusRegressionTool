@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import unittest
 
+from energyplus_regressions.builds.base import BuildTree
 from energyplus_regressions.builds.makefile import CMakeCacheMakeFileBuildDirectory
 from energyplus_regressions.runtests import TestRunConfiguration, SuiteRunner
 from energyplus_regressions.structures import (
@@ -2337,6 +2338,57 @@ class TestTestSuiteRunner(unittest.TestCase):
         mod_glhe = self.resources / 'eplusout_mod_bad_key.glhe'
         diff_file = self.temp_base_build_dir / 'glhe.7.diff'
         self.assertEqual(TextDifferences.DIFFS, SuiteRunner.diff_glhe_files(base_glhe, mod_glhe, diff_file))
+
+    def test_stale_diff_sidecar_not_left_behind_once_files_match(self):
+        # Regression test: energyplus_regressions writes 'eplusout.rdd.diff' (and similar
+        # sidecars) into the base case's output directory, but only when it finds an actual
+        # difference (see diff_text_files: it returns EQUAL and writes nothing when the
+        # cleaned contents match). So if a first run genuinely differs, and the case is then
+        # rerun after the RDDs are made to match, process_diffs_for_one_case must not let
+        # that stale eplusout.rdd.diff survive - otherwise a caller (e.g. a CI report bundler
+        # that globs for '*.diff' files) will report a diff that no longer exists.
+        base_dir = self.temp_base_build_dir
+        mod_dir = self.temp_mod_build_dir
+
+        end_contents = 'EnergyPlus Completed Successfully-- 1 Warning; 0 Severe Errors; Elapsed Time=00hr 00min  1.42sec'
+        (base_dir / 'eplusout.end').write_text(end_contents)
+        (mod_dir / 'eplusout.end').write_text(end_contents)
+
+        base_rdd = base_dir / 'eplusout.rdd'
+        mod_rdd = mod_dir / 'eplusout.rdd'
+        baseline_rdd_contents = 'Zone,Average,Some Output Variable []\n'
+        proposed_rdd_contents = 'Zone,Average,Some Different Output Variable []\n'
+        base_rdd.write_text(baseline_rdd_contents)
+        mod_rdd.write_text(proposed_rdd_contents)
+
+        build_tree_a = BuildTree()
+        build_tree_a.build_dir = base_dir
+        build_tree_b = BuildTree()
+        build_tree_b.build_dir = mod_dir
+        threshold_file = Path(__file__).resolve().parent.parent / 'diffs' / 'math_diff.config'
+        rdd_diff_file = base_dir / 'eplusout.rdd.diff'
+
+        # First run: base and mod genuinely differ, so a real eplusout.rdd.diff must appear
+        entry_1 = TestEntry('SomeTestCase', '')
+        entry_1, _ = SuiteRunner.process_diffs_for_one_case(
+            entry_1, build_tree_a, build_tree_b, '', str(threshold_file), ci_mode=True
+        )
+        self.assertEqual(TextDifferences.DIFFS, entry_1.rdd_diffs.diff_type)
+        self.assertTrue(rdd_diff_file.exists(), "A real RDD diff should have been written")
+
+        # Second run: the baseline is updated to match the proposed content (as if the
+        # underlying change had been accepted), so this rerun should find no RDD diff at all
+        base_rdd.write_text(proposed_rdd_contents)
+        entry_2 = TestEntry('SomeTestCase', '')
+        entry_2, _ = SuiteRunner.process_diffs_for_one_case(
+            entry_2, build_tree_a, build_tree_b, '', str(threshold_file), ci_mode=True
+        )
+        self.assertEqual(TextDifferences.EQUAL, entry_2.rdd_diffs.diff_type)
+        self.assertFalse(
+            rdd_diff_file.exists(),
+            "The eplusout.rdd.diff from the first run must not survive a rerun where the "
+            "RDDs now match"
+        )
 
     def test_json_time_series(self):
         # only hourly for now
