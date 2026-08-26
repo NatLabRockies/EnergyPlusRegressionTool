@@ -1,5 +1,6 @@
 # EnergyPlus Regressions
 
+[![pypi](https://img.shields.io/pypi/v/energyplus-regressions.svg)](https://pypi.org/project/energyplus-regressions/)
 [![Documentation Status](https://readthedocs.org/projects/energyplusregressiontool/badge/?version=latest)](https://energyplusregressiontool.readthedocs.io/en/latest/?badge=latest)
 [![Run Tests](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/test.yml/badge.svg)](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/test.yml)
 [![PyPIRelease](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/release.yml/badge.svg)](https://github.com/NatLabRockies/EnergyPlusRegressionTool/actions/workflows/release.yml)
