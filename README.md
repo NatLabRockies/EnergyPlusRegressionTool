@@ -37,6 +37,11 @@ For setting up a development environment to do _work_ on this tool, the steps ar
  - Clone this repository (`git clone https://github.com/NatLabRockies/EnergyPlusRegressionTool`)
  - Install dependencies (`pip3 install -r requirements.txt`)
 
+## Releasing
+
+Version numbers are bumped with [bump2version](https://github.com/c4urself/bump2version), configured in `.bumpversion.cfg`.
+To cut a release, run `bump2version patch` (or `minor`/`major`), then `git push --follow-tags`; pushing the tag triggers the PyPI release workflow.
+
 ## Documentation
 
 Program documentation, including user guide and typical workflows, are available in the documentation.
