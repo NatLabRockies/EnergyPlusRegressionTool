@@ -840,6 +840,20 @@ class SuiteRunner:
         return resulting_diff_type, num_values_checked, num_big_diffs, num_small_diffs
 
     @staticmethod
+    def clean_stale_diff_artifacts(out_dir: Path) -> None:
+        """Remove any diff/absdiff/percdiff/diffsummary sidecar files left over in out_dir from a previous comparison.
+
+        Each individual diff routine below only writes its output file when it finds an actual difference.
+        Without this, a case that no longer differs would keep reporting a stale diff from an earlier run where it did.
+        """
+        patterns = ('*.diff', '*absdiff*', '*percdiff*', '*diffsummary*', '*summarydiff*', '*.diffs.json')
+        stale_files = set()
+        for pattern in patterns:
+            stale_files.update(out_dir.glob(pattern))
+        for stale_file in stale_files:
+            stale_file.unlink()
+
+    @staticmethod
     def process_diffs_for_one_case(
             this_entry, build_tree_a: BuildTree, build_tree_b: BuildTree,
             test_output_dir, thresh_dict_file, ci_mode=False
@@ -853,6 +867,7 @@ class SuiteRunner:
             case_result_dir_2 = build_tree_b.build_dir / test_output_dir / this_entry.basename
 
         out_dir = case_result_dir_1
+        SuiteRunner.clean_stale_diff_artifacts(out_dir)
 
         # we aren't using math_diff and table_diffs summary csv files, so use blanks
         path_to_math_diff_log = ""

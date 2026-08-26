@@ -2390,6 +2390,33 @@ class TestTestSuiteRunner(unittest.TestCase):
             "RDDs now match"
         )
 
+    def test_clean_stale_diff_artifacts(self):
+        out_dir = self.temp_base_build_dir
+        stale_files = [
+            out_dir / 'eplusout.rdd.diff',
+            out_dir / 'eplusout.audit.diff',
+            out_dir / 'eplusout.csv.absdiff.csv',
+            out_dir / 'eplusout.csv.percdiff.csv',
+            out_dir / 'eplusout.csv.diffsummary.csv',
+            out_dir / 'eplustbl.htm.summarydiff.htm',
+            out_dir / 'eplusout_hourly.diffs.json',
+        ]
+        files_to_keep = [
+            out_dir / 'eplusout.rdd',
+            out_dir / 'eplusout.audit',
+            out_dir / 'eplusout.csv',
+            out_dir / 'eplustbl.htm',
+        ]
+        for f in stale_files + files_to_keep:
+            f.write_text('some old content')
+
+        SuiteRunner.clean_stale_diff_artifacts(out_dir)
+
+        for f in stale_files:
+            self.assertFalse(f.exists(), f"Stale diff artifact should have been removed: {f.name}")
+        for f in files_to_keep:
+            self.assertTrue(f.exists(), f"Real output file should not have been removed: {f.name}")
+
     def test_json_time_series(self):
         # only hourly for now
         base_json = self.resources / 'eplusout_hourly_base.json'
